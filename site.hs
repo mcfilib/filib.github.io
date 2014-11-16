@@ -46,5 +46,5 @@ main = hakyll $ do
 --------------------------------------------------------------------------------
 postContext :: Context String
 postContext =
-    dateField "date" "%B %e, %Y" `mappend`
+    dateField "date" "%B %e %Y" `mappend`
     defaultContext
