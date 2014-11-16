@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
-import           Hakyll
+import Data.Monoid (mappend)
+import Hakyll
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -22,29 +22,29 @@ main = hakyll $ do
     match "posts/*.md" $ do
         route $ setExtension "html"
         compile $ pandocCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
-            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= loadAndApplyTemplate "templates/post.html"    postContext
+            >>= loadAndApplyTemplate "templates/default.html" postContext
             >>= relativizeUrls
 
     match "index.html" $ do
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
-            let archiveCtx =
-                    listField "posts" postCtx (return posts) `mappend`
-                    constField "title" "Archives"            `mappend`
+            let archiveContext =
+                    listField "posts" postContext (return posts) `mappend`
+                    constField "title" "Archives"                `mappend`
                     defaultContext
 
             makeItem ""
-                >>= loadAndApplyTemplate "templates/index.html" archiveCtx
-                >>= loadAndApplyTemplate "templates/default.html" archiveCtx
+                >>= loadAndApplyTemplate "templates/index.html" archiveContext
+                >>= loadAndApplyTemplate "templates/default.html" archiveContext
                 >>= relativizeUrls
 
     match "templates/*" $ compile templateCompiler
 
 
 --------------------------------------------------------------------------------
-postCtx :: Context String
-postCtx =
+postContext :: Context String
+postContext =
     dateField "date" "%B %e, %Y" `mappend`
     defaultContext
