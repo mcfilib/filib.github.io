@@ -3,8 +3,7 @@ import Data.Monoid ((<>))
 import Hakyll
 
 postContext :: Context String
-postContext =
-  dateField "date" "%B %e %Y" <> defaultContext
+postContext = dateField "date" "%B %e %Y" <> defaultContext
 
 archiveContext :: Compiler [Item String] -> Context String
 archiveContext posts = listField "posts" postContext posts <> defaultContext
