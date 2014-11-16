@@ -34,10 +34,11 @@ main = hakyll $ do
 
   match "index.html" $ do
     route idRoute
+    let posts = recentFirst =<< loadAll "posts/*"
     compile $ do
       makeItem ""
-        >>= loadAndApplyTemplate "templates/index.html"   (archiveContext (recentFirst =<< loadAll "posts/*"))
-        >>= loadAndApplyTemplate "templates/default.html" (archiveContext (recentFirst =<< loadAll "posts/*"))
+        >>= loadAndApplyTemplate "templates/index.html"   (archiveContext posts)
+        >>= loadAndApplyTemplate "templates/default.html" (archiveContext posts)
         >>= relativizeUrls
 
   match "templates/*" $ compile templateCompiler
