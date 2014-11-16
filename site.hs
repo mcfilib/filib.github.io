@@ -6,41 +6,38 @@ postContext :: Context String
 postContext =
   dateField "date" "%B %e %Y" <> defaultContext
 
+archiveContext :: Compiler [Item String] -> Context String
+archiveContext posts = listField "posts" postContext posts <> defaultContext
+
 main :: IO ()
 main = hakyll $ do
   match "images/*" $ do
-      route   idRoute
-      compile copyFileCompiler
+    route   idRoute
+    compile copyFileCompiler
 
   match "css/*" $ do
-      route   idRoute
-      compile compressCssCompiler
+    route   idRoute
+    compile compressCssCompiler
 
   match (fromList ["about.md", "contact.md"]) $ do
-      route   $ setExtension "html"
-      compile $ pandocCompiler
-          >>= loadAndApplyTemplate "templates/default.html" defaultContext
-          >>= relativizeUrls
+    route   $ setExtension "html"
+    compile $ pandocCompiler
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+      >>= relativizeUrls
 
   match "posts/*.md" $ do
-      route $ setExtension "html"
-      compile $ pandocCompiler
-          >>= loadAndApplyTemplate "templates/post.html"    postContext
-          >>= loadAndApplyTemplate "templates/default.html" postContext
-          >>= relativizeUrls
+    route $ setExtension "html"
+    compile $ pandocCompiler
+      >>= loadAndApplyTemplate "templates/post.html"    postContext
+      >>= loadAndApplyTemplate "templates/default.html" postContext
+      >>= relativizeUrls
 
   match "index.html" $ do
-      route idRoute
-      compile $ do
-          posts <- recentFirst =<< loadAll "posts/*"
-          let archiveContext =
-                  listField "posts" postContext (return posts) <>
-                  constField "title" "Home"                    <>
-                  defaultContext
-
-          makeItem ""
-              >>= loadAndApplyTemplate "templates/index.html" archiveContext
-              >>= loadAndApplyTemplate "templates/default.html" archiveContext
-              >>= relativizeUrls
+    route idRoute
+    compile $ do
+      makeItem ""
+        >>= loadAndApplyTemplate "templates/index.html"   (archiveContext (recentFirst =<< loadAll "posts/*"))
+        >>= loadAndApplyTemplate "templates/default.html" (archiveContext (recentFirst =<< loadAll "posts/*"))
+        >>= relativizeUrls
 
   match "templates/*" $ compile templateCompiler
