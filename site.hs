@@ -5,18 +5,18 @@ import Hakyll
 postContext :: Context String
 postContext = dateField "date" "%B %e %Y" <> defaultContext
 
-archiveContext :: Compiler [Item String] -> Context String
-archiveContext posts = listField "posts" postContext posts <> defaultContext
+indexContext :: Compiler [Item String] -> Context String
+indexContext posts = listField "posts" postContext posts <> defaultContext
 
 main :: IO ()
 main = hakyll $ do
   match "index.html" $ do
     route idRoute
-    let posts = recentFirst =<< loadAll "posts/*"
     compile $ do
-      makeItem ""
-        >>= loadAndApplyTemplate "templates/index.html"   (archiveContext posts)
-        >>= loadAndApplyTemplate "templates/default.html" (archiveContext posts)
+      let posts = recentFirst =<< loadAll "posts/*.md"
+      getResourceBody
+        >>= applyAsTemplate (indexContext posts)
+        >>= loadAndApplyTemplate "templates/default.html" (indexContext posts)
         >>= relativizeUrls
 
   match (fromList ["about.md", "contact.md"]) $ do
