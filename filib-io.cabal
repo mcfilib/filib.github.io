@@ -1,10 +1,10 @@
-name:               philipcunningham-io
+name:               filib-io
 version:            0.1.0.0
 build-type:         Simple
 cabal-version:      >= 1.10
 
-executable site
-  main-is:          site.hs
+executable Filib
+  main-is:          Filib.hs
   build-depends:    base == 4.*,
                     hakyll == 4.6.*
   ghc-options:      -threaded
