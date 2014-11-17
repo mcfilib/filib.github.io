@@ -7,7 +7,7 @@ pre.sourceCode {
     -webkit-border-radius: 5px;
     background: #EFEFEF;
     border-radius: 5px;
-    padding: 15px;
+    padding: 15px 20px 15px 20px;
 }
 
 table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode, table.sourceCode pre {
