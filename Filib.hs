@@ -15,9 +15,10 @@ indexContext tags posts = mconcat
   , defaultContext
   ]
 
-tagsContext :: Tags -> Compiler [Item String] -> Context String
-tagsContext tags posts = mconcat
-  [ listField "posts" (postContext tags) posts
+tagsContext :: Tags -> Compiler [Item String] -> String -> Context String
+tagsContext tags posts title = mconcat
+  [ constField "title" title
+  , listField "posts" (postContext tags) posts
   , defaultContext
   ]
 
@@ -27,11 +28,12 @@ main = hakyll $ do
 
   tagsRules tags $ \tag pattern -> do
     let posts = recentFirst =<< loadAll "posts/*.md"
+    let title = "tagged with " ++ tag
     route $ setExtension "html"
     compile $ do
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts)
-        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts)
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts title)
+        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts title)
         >>= relativizeUrls
 
   match "index.html" $ do
