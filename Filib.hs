@@ -53,6 +53,10 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" context
       >>= relativizeUrls
 
+  match "favicon.ico" $ do
+    route   idRoute
+    compile copyFileCompiler
+
   match "images/*" $ do
     route   idRoute
     compile copyFileCompiler
