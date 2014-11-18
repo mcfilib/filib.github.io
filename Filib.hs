@@ -11,7 +11,8 @@ postContext tags = mconcat
 
 indexContext :: Tags -> Compiler [Item String] -> Context String
 indexContext tags posts = mconcat
-  [ listField "posts" (postContext tags) posts
+  [ constField "topLevelTitle" "Home"
+  , listField "posts" (postContext tags) posts
   , defaultContext
   ]
 
@@ -27,7 +28,6 @@ main = hakyll $ do
   tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
 
   tagsRules tags $ \tag pattern -> do
-    let posts = recentFirst =<< loadAll "posts/*.md"
     let title = "tagged with " ++ tag
     route $ setExtension "html"
     compile $ do
@@ -37,7 +37,6 @@ main = hakyll $ do
         >>= relativizeUrls
 
   match "index.html" $ do
-    let posts = recentFirst =<< loadAll "posts/*.md"
     route idRoute
     compile $ do
       getResourceBody
@@ -67,3 +66,5 @@ main = hakyll $ do
     compile compressCssCompiler
 
   match "templates/*" $ compile templateCompiler
+
+  where posts = recentFirst =<< loadAll "posts/*.md"

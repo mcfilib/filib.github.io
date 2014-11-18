@@ -1,3 +1,10 @@
+<h1 class="content-subhead">
+  $if(topLevelTitle)$
+    $topLevelTitle$
+  $else$
+    <a href="/">Home</a> : $title$
+  $endif$
+</h1>
 <ul>
   $for(posts)$
     <li>
