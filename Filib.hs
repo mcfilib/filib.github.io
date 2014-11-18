@@ -1,22 +1,41 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Data.Monoid ((<>))
+import Data.Monoid ((<>), mconcat)
 import Hakyll
 
-postContext :: Context String
-postContext = dateField "date" "%B %e %Y" <> defaultContext
+postContext :: Tags -> Context String
+postContext tags = mconcat
+  [ dateField "date" "%B %e %Y"
+  , tagsField "tags" tags
+  , defaultContext
+  ]
 
-indexContext :: Compiler [Item String] -> Context String
-indexContext posts = listField "posts" postContext posts <> defaultContext
+indexContext :: Tags -> Compiler [Item String] -> Context String
+indexContext tags posts = listField "posts" (postContext tags) posts <> defaultContext
+
+tagsContext :: Tags -> Compiler [Item String] -> Context String
+tagsContext tags posts = listField "posts" (postContext tags) posts <>
+  defaultContext
 
 main :: IO ()
 main = hakyll $ do
+  tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
+
+  tagsRules tags $ \tag pattern -> do
+    let posts = recentFirst =<< loadAll "posts/*.md"
+    route $ setExtension "html"
+    compile $ do
+      makeItem ""
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts)
+        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts)
+        >>= relativizeUrls
+
   match "index.html" $ do
+    let posts = recentFirst =<< loadAll "posts/*.md"
     route idRoute
     compile $ do
-      let posts = recentFirst =<< loadAll "posts/*.md"
       getResourceBody
-        >>= applyAsTemplate (indexContext posts)
-        >>= loadAndApplyTemplate "templates/default.html" (indexContext posts)
+        >>= applyAsTemplate (indexContext tags posts)
+        >>= loadAndApplyTemplate "templates/default.html" (indexContext tags posts)
         >>= relativizeUrls
 
   match (fromList ["about.md", "contact.md"]) $ do
@@ -28,8 +47,8 @@ main = hakyll $ do
   match "posts/*.md" $ do
     route $ setExtension "html"
     compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/post.html"    postContext
-      >>= loadAndApplyTemplate "templates/default.html" postContext
+      >>= loadAndApplyTemplate "templates/post.html"    (postContext tags)
+      >>= loadAndApplyTemplate "templates/default.html" (postContext tags)
       >>= relativizeUrls
 
   match "images/*" $ do
