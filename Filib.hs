@@ -28,32 +28,29 @@ main = hakyll $ do
   tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
 
   tagsRules tags $ \tag pattern -> do
+    let context = tagsContext tags posts tag
     route $ setExtension "html"
     compile $ do
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts tag)
-        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts tag)
+        >>= loadAndApplyTemplate "templates/post-list.html" context
+        >>= loadAndApplyTemplate "templates/default.html"   context
         >>= relativizeUrls
 
   match "index.html" $ do
+    let context = indexContext tags posts
     route idRoute
     compile $ do
       getResourceBody
-        >>= applyAsTemplate (indexContext tags posts)
-        >>= loadAndApplyTemplate "templates/default.html" (indexContext tags posts)
+        >>= applyAsTemplate                               context
+        >>= loadAndApplyTemplate "templates/default.html" context
         >>= relativizeUrls
 
-  match (fromList ["about.md", "contact.md"]) $ do
-    route   $ setExtension "html"
-    compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/default.html" defaultContext
-      >>= relativizeUrls
-
   match "posts/*.md" $ do
+    let context = postContext tags
     route $ setExtension "html"
     compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/post.html"    (postContext tags)
-      >>= loadAndApplyTemplate "templates/default.html" (postContext tags)
+      >>= loadAndApplyTemplate "templates/post.html"    context
+      >>= loadAndApplyTemplate "templates/default.html" context
       >>= relativizeUrls
 
   match "images/*" $ do
