@@ -28,12 +28,11 @@ main = hakyll $ do
   tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
 
   tagsRules tags $ \tag pattern -> do
-    let title = "tagged with " ++ tag
     route $ setExtension "html"
     compile $ do
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts title)
-        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts title)
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts tag)
+        >>= loadAndApplyTemplate "templates/default.html" (tagsContext tags posts tag)
         >>= relativizeUrls
 
   match "index.html" $ do
