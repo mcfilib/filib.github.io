@@ -119,19 +119,19 @@ h3 {
     color: #fff;
     background: #999;
     font-size: 80%;
-}
-    .post-category-design {
+    .x {
         background: #5aba59;
     }
-    .post-category-pure {
+    .y {
         background: #4d85d1;
     }
-    .post-category-yui {
+    .z {
         background: #8156a7;
     }
-    .post-category-js {
+    .w {
         background: #df2d4f;
     }
+}
 
 .post-images {
     margin: 1em 0;
