@@ -10,7 +10,7 @@ postContext tags = mconcat
   ]
 
 indexContext :: Tags -> Compiler [Item String] -> Context String
-indexContext tags posts =  mconcat
+indexContext tags posts = mconcat
   [ listField "posts" (postContext tags) posts
   , defaultContext]
 
