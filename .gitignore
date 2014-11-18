@@ -17,3 +17,4 @@ cabal.config
 *.hp
 _site/
 _cache/
+filib.github.io/
