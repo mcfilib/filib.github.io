@@ -1,7 +1,7 @@
 ---
 title: Hello World
 author: Philip Cunningham
-tags: hello world
+tags: meta
 ---
 
 ```haskell
