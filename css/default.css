@@ -139,16 +139,19 @@ h3 {
     font-size: 80%;
 }
 
-.x {
+.green {
     background: #5aba59;
 }
-.y {
+
+.blue {
     background: #4d85d1;
 }
-.z {
+
+.purple {
     background: #8156a7;
 }
-.w {
+
+.red {
     background: #df2d4f;
 }
 
