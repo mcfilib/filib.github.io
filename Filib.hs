@@ -12,6 +12,7 @@ import qualified Data.Map                    as M
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
+type Field = String
 type Title = String
 
 indexCtx :: Tags -> Compiler [Item String] -> Context String
@@ -35,7 +36,7 @@ tagsCtx title tags posts = mconcat
   , defaultContext
   ]
 
-htmlTags :: String -> Tags -> Context a
+htmlTags :: Field -> Tags -> Context a
 htmlTags key tags = field key $ \item -> do
   tags' <- getTags $ itemIdentifier item
   links <- forM tags' $ \tag -> renderLink tag <$> getRoute (tagsMakeId tags tag)
