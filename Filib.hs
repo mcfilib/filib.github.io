@@ -8,6 +8,8 @@ import qualified Data.Map                    as M
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
+type Title = String
+
 indexCtx :: Tags -> Compiler [Item String] -> Context String
 indexCtx tags posts = mconcat
   [ constField "rootTitle" "Home"
@@ -22,8 +24,8 @@ postCtx tags = mconcat
   , defaultContext
   ]
 
-tagsCtx :: Tags -> Compiler [Item String] -> String -> Context String
-tagsCtx tags posts title = mconcat
+tagsCtx :: Title -> Tags -> Compiler [Item String] -> Context String
+tagsCtx title tags posts = mconcat
   [ constField "title" title
   , listField "posts" (postCtx tags) posts
   , defaultContext
@@ -38,8 +40,8 @@ main = hakyll $ do
     compile $ do
       let posts = recentFirst =<< loadAll pattern
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsCtx tags posts tag)
-        >>= loadAndApplyTemplate "templates/default.html"   (tagsCtx tags posts tag)
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsCtx tag tags posts)
+        >>= loadAndApplyTemplate "templates/default.html"   (tagsCtx tag tags posts)
         >>= relativizeUrls
 
   match "index.html" $ do
