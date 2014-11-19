@@ -1,4 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+import Control.Monad                   (forM, forM_)
+import Data.List                       (intersperse)
+import Data.Maybe                      (catMaybes)
 import Data.Monoid                     (mconcat)
 import Hakyll
 import Text.Blaze.Html                 (toHtml, toValue, (!))
@@ -20,7 +23,7 @@ indexCtx tags posts = mconcat
 postCtx :: Tags -> Context String
 postCtx tags = mconcat
   [ dateField "date" "%B %e %Y"
-  , tagsField "tags" tags
+  , htmlTagsWith getTags "tags" tags
   , defaultContext
   ]
 
@@ -30,6 +33,18 @@ tagsCtx title tags posts = mconcat
   , listField "posts" (postCtx tags) posts
   , defaultContext
   ]
+
+htmlTagsWith :: (Identifier -> Compiler [String]) -> String -> Tags -> Context a
+htmlTagsWith getTags' key tags = field key $ \item -> do
+  tags' <- getTags' $ itemIdentifier item
+  links <- forM tags' $ \tag -> do
+    route' <- getRoute $ tagsMakeId tags tag
+    return $ renderLink tag route'
+  return . mconcat . intersperse ", " . catMaybes $ links
+  where
+    renderLink _   Nothing         = Nothing
+    renderLink tag (Just filePath) = Just $
+      "<a href=\" " ++ toUrl filePath ++ "\" class=\"post-category x\">" ++ tag ++ "</a>"
 
 main :: IO ()
 main = hakyll $ do
