@@ -1,5 +1,5 @@
 ---
-title: Ruby Euclidean Distance
+title: Euclidean Distance in Ruby
 author: Philip Cunningham
 tags: ruby
 ---

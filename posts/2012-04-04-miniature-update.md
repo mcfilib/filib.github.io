@@ -1,5 +1,5 @@
 ---
-title: A Miniature Update
+title: Miniature Update
 author: Philip Cunningham
 tags: self
 ---
