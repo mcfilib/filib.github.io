@@ -36,19 +36,19 @@ main = hakyll $ do
   tagsRules tags $ \tag pattern -> do
     route   $ setExtension "html"
     compile $ do
-      posts <- recentFirst =<< loadAll pattern
+      posts <- return $ recentFirst =<< loadAll pattern
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags (return posts) tag)
-        >>= loadAndApplyTemplate "templates/default.html"   (tagsContext tags (return posts) tag)
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts tag)
+        >>= loadAndApplyTemplate "templates/default.html"   (tagsContext tags posts tag)
         >>= relativizeUrls
 
   match "index.html" $ do
     route idRoute
     compile $ do
-      posts <- recentFirst =<< loadAll "posts/*.md"
+      posts <- return $ recentFirst =<< loadAll "posts/*.md"
       getResourceBody
-        >>= applyAsTemplate                               (indexContext tags (return posts))
-        >>= loadAndApplyTemplate "templates/default.html" (indexContext tags (return posts))
+        >>= applyAsTemplate                               (indexContext tags posts)
+        >>= loadAndApplyTemplate "templates/default.html" (indexContext tags posts)
         >>= relativizeUrls
 
   match "posts/*.md" $ do
