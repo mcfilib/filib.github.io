@@ -10,7 +10,7 @@ import qualified Text.Blaze.Html5.Attributes as A
 
 indexContext :: Tags -> Compiler [Item String] -> Context String
 indexContext tags posts = mconcat
-  [ constField "topLevelTitle" "Home"
+  [ constField "rootTitle" "Home"
   , listField "posts" (postContext tags) posts
   , defaultContext
   ]
