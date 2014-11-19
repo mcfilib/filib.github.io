@@ -44,7 +44,7 @@ htmlTags key tags = field key $ \item -> do
   where
     renderLink _   Nothing         = Nothing
     renderLink tag (Just filePath) = Just $
-      H.a ! A.href (toValue . toUrl $ filePath) ! A.class_ "x" $ toHtml tag
+      H.a ! A.href (toValue . toUrl $ filePath) ! A.class_ "post-category x" $ toHtml tag
 
 main :: IO ()
 main = hakyll $ do
