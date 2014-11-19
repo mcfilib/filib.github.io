@@ -8,6 +8,7 @@ a {
     text-decoration: none;
     color: rgb(61, 146, 201);
 }
+
 a:hover,
 a:focus {
     text-decoration: underline;
@@ -38,13 +39,14 @@ h3 {
     color: #fff;
 }
 
-.brand-title,
-.brand-tagline {
+.brand-title, .brand-tagline {
     margin: 0;
 }
+
 .brand-title {
     text-transform: uppercase;
 }
+
 .brand-tagline {
     font-weight: 300;
     color: rgb(176, 202, 219);
@@ -55,11 +57,13 @@ h3 {
     padding: 0;
     list-style: none;
 }
+
 .nav-item {
     display: inline-block;
     *display: inline;
     zoom: 1;
 }
+
 .nav-item a {
     background: transparent;
     border: 2px solid rgb(176, 202, 219);
@@ -69,8 +73,8 @@ h3 {
     text-transform: uppercase;
     font-size: 85%;
 }
-.nav-item a:hover,
-.nav-item a:focus {
+
+.nav-item a:hover, .nav-item a:focus {
     border: 2px solid rgb(61, 146, 201);
     text-decoration: none;
 }
@@ -89,24 +93,29 @@ h3 {
     padding: 2em 1em 0;
 }
 
+
 .post {
     padding-bottom: 2em;
 }
+
 .post-title {
     font-size: 2em;
     color: #222;
     margin-bottom: 0.2em;
 }
+
 .post-avatar {
     border-radius: 50px;
     float: right;
     margin-left: 1em;
 }
+
 .post-description {
     font-family: Georgia, "Cambria", serif;
     color: #444;
     line-height: 1.8em;
 }
+
 .post-meta {
     color: #999;
     font-size: 90%;
@@ -136,6 +145,7 @@ h3 {
 .post-images {
     margin: 1em 0;
 }
+
 .post-image-meta {
     margin-top: -3.5em;
     margin-left: 1em;
@@ -147,12 +157,13 @@ h3 {
     text-align: center;
     padding: 1em 0;
 }
+
 .footer a {
     color: #ccc;
     font-size: 80%;
 }
-.footer .pure-menu a:hover,
-.footer .pure-menu a:focus {
+
+.footer .pure-menu a:hover, .footer .pure-menu a:focus {
     background: none;
 }
 
