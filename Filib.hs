@@ -35,25 +35,23 @@ main = hakyll $ do
 
   tagsRules tags $ \tag pattern -> do
     let context = tagsContext tags posts tag
-    route $ setExtension "html"
-    compile $
-      makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" context
-        >>= loadAndApplyTemplate "templates/default.html"   context
-        >>= relativizeUrls
+    route   $ setExtension "html"
+    compile $ makeItem ""
+      >>= loadAndApplyTemplate "templates/post-list.html" context
+      >>= loadAndApplyTemplate "templates/default.html"   context
+      >>= relativizeUrls
 
   match "index.html" $ do
     let context = indexContext tags posts
     route idRoute
-    compile $
-      getResourceBody
-        >>= applyAsTemplate                               context
-        >>= loadAndApplyTemplate "templates/default.html" context
-        >>= relativizeUrls
+    compile $ getResourceBody
+      >>= applyAsTemplate                               context
+      >>= loadAndApplyTemplate "templates/default.html" context
+      >>= relativizeUrls
 
   match "posts/*.md" $ do
     let context = postContext tags
-    route $ setExtension "html"
+    route   $ setExtension "html"
     compile $ pandocCompiler
       >>= loadAndApplyTemplate "templates/post.html"    context
       >>= loadAndApplyTemplate "templates/default.html" context
