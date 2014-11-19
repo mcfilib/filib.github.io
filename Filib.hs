@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Data.Monoid (mconcat)
+import Data.Monoid                     (mconcat)
 import Hakyll
+import Text.Blaze.Html                 (toHtml, toValue, (!))
+import Text.Blaze.Html.Renderer.String (renderHtml)
+
+import qualified Data.Map                    as M
+import qualified Text.Blaze.Html5            as H
+import qualified Text.Blaze.Html5.Attributes as A
 
 indexContext :: Tags -> Compiler [Item String] -> Context String
 indexContext tags posts = mconcat
