@@ -40,7 +40,7 @@ htmlTagsWith getTags' key tags = field key $ \item -> do
   links <- forM tags' $ \tag -> do
     route' <- getRoute $ tagsMakeId tags tag
     return $ renderLink tag route'
-  return . mconcat . intersperse ", " . catMaybes $ links
+  return . mconcat . intersperse " " . catMaybes $ links
   where
     renderLink _   Nothing         = Nothing
     renderLink tag (Just filePath) = Just $
