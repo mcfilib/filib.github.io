@@ -36,7 +36,7 @@ main = hakyll $ do
   tagsRules tags $ \tag pattern -> do
     let context = tagsContext tags posts tag
     route $ setExtension "html"
-    compile $ do
+    compile $
       makeItem ""
         >>= loadAndApplyTemplate "templates/post-list.html" context
         >>= loadAndApplyTemplate "templates/default.html"   context
@@ -45,7 +45,7 @@ main = hakyll $ do
   match "index.html" $ do
     let context = indexContext tags posts
     route idRoute
-    compile $ do
+    compile $
       getResourceBody
         >>= applyAsTemplate                               context
         >>= loadAndApplyTemplate "templates/default.html" context
