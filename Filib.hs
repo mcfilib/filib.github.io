@@ -24,7 +24,7 @@ indexCtx tags posts = mconcat
 postCtx :: Tags -> Context String
 postCtx tags = mconcat
   [ dateField "date" "%B %e %Y"
-  , htmlTags getTags "tags" tags
+  , htmlTags "tags" tags
   , defaultContext
   ]
 
@@ -35,9 +35,9 @@ tagsCtx title tags posts = mconcat
   , defaultContext
   ]
 
-htmlTags :: (Identifier -> Compiler [String]) -> String -> Tags -> Context a
-htmlTags getTags' key tags = field key $ \item -> do
-  tags' <- getTags' $ itemIdentifier item
+htmlTags :: String -> Tags -> Context a
+htmlTags key tags = field key $ \item -> do
+  tags' <- getTags $ itemIdentifier item
   links <- forM tags' $ \tag -> renderLink tag <$> getRoute (tagsMakeId tags tag)
   return . renderHtml . mconcat . intersperse " " . catMaybes $ links
   where
