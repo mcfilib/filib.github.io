@@ -4,12 +4,12 @@ author: Philip Cunningham
 tags: ruby
 ---
 
-```ruby
-# (map (comp - *) [2 4 6] [1 2 3])
+We can monkey patch `Proc` to add an operator for function composition.
 
+```ruby
 class Proc
   def comp f, g
-    ->(*args){f.call(g.call(*args))}
+    ->(*args) { f.call(g.call(*args)) }
   end
 
   def * g
@@ -17,11 +17,11 @@ class Proc
   end
 end
 
-multiply  = ->(x, y){x * y}
-negative  = ->(x){-x}
+multiply  = ->(x, y) { x * y }
+negative  = ->(x) { -x }
 composed  = negative * multiply
 
-composed.(9,9)                                   # => -81
+composed.(9,9)                                     # => -81
 
-[2,4,6].zip([1,2,3]).map{|x, y| composed.(x, y)} # => [-2, -8, -18]
+[2,4,6].zip([1,2,3]).map{ |x, y| composed.(x, y) } # => [-2, -8, -18]
 ```
