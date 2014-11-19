@@ -2,17 +2,17 @@
 import Data.Monoid (mconcat)
 import Hakyll
 
-postContext :: Tags -> Context String
-postContext tags = mconcat
-  [ dateField "date" "%B %e %Y"
-  , tagsField "tags" tags
-  , defaultContext
-  ]
-
 indexContext :: Tags -> Compiler [Item String] -> Context String
 indexContext tags posts = mconcat
   [ constField "topLevelTitle" "Home"
   , listField "posts" (postContext tags) posts
+  , defaultContext
+  ]
+
+postContext :: Tags -> Context String
+postContext tags = mconcat
+  [ dateField "date" "%B %e %Y"
+  , tagsField "tags" tags
   , defaultContext
   ]
 
