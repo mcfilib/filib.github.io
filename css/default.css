@@ -137,18 +137,19 @@ h3 {
     color: #fff;
     background: #999;
     font-size: 80%;
-    .x {
-        background: #5aba59;
-    }
-    .y {
-        background: #4d85d1;
-    }
-    .z {
-        background: #8156a7;
-    }
-    .w {
-        background: #df2d4f;
-    }
+}
+
+.x {
+    background: #5aba59;
+}
+.y {
+    background: #4d85d1;
+}
+.z {
+    background: #8156a7;
+}
+.w {
+    background: #df2d4f;
 }
 
 .post-images {
