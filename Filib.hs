@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+import Control.Applicative ((<$>))
 import Control.Monad                   (forM, forM_)
 import Data.List                       (intersperse)
 import Data.Maybe                      (catMaybes)
@@ -37,9 +38,7 @@ tagsCtx title tags posts = mconcat
 htmlTags :: (Identifier -> Compiler [String]) -> String -> Tags -> Context a
 htmlTags getTags' key tags = field key $ \item -> do
   tags' <- getTags' $ itemIdentifier item
-  links <- forM tags' $ \tag -> do
-    route' <- getRoute $ tagsMakeId tags tag
-    return $ renderLink tag route'
+  links <- forM tags' $ \tag -> renderLink tag <$> getRoute (tagsMakeId tags tag)
   return . renderHtml . mconcat . intersperse " " . catMaybes $ links
   where
     renderLink _   Nothing         = Nothing
