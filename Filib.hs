@@ -8,24 +8,24 @@ import qualified Data.Map                    as M
 import qualified Text.Blaze.Html5            as H
 import qualified Text.Blaze.Html5.Attributes as A
 
-indexContext :: Tags -> Compiler [Item String] -> Context String
-indexContext tags posts = mconcat
+indexCtx :: Tags -> Compiler [Item String] -> Context String
+indexCtx tags posts = mconcat
   [ constField "rootTitle" "Home"
-  , listField "posts" (postContext tags) posts
+  , listField "posts" (postCtx tags) posts
   , defaultContext
   ]
 
-postContext :: Tags -> Context String
-postContext tags = mconcat
+postCtx :: Tags -> Context String
+postCtx tags = mconcat
   [ dateField "date" "%B %e %Y"
   , tagsField "tags" tags
   , defaultContext
   ]
 
-tagsContext :: Tags -> Compiler [Item String] -> String -> Context String
-tagsContext tags posts title = mconcat
+tagsCtx :: Tags -> Compiler [Item String] -> String -> Context String
+tagsCtx tags posts title = mconcat
   [ constField "title" title
-  , listField "posts" (postContext tags) posts
+  , listField "posts" (postCtx tags) posts
   , defaultContext
   ]
 
@@ -38,8 +38,8 @@ main = hakyll $ do
     compile $ do
       let posts = recentFirst =<< loadAll pattern
       makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsContext tags posts tag)
-        >>= loadAndApplyTemplate "templates/default.html"   (tagsContext tags posts tag)
+        >>= loadAndApplyTemplate "templates/post-list.html" (tagsCtx tags posts tag)
+        >>= loadAndApplyTemplate "templates/default.html"   (tagsCtx tags posts tag)
         >>= relativizeUrls
 
   match "index.html" $ do
@@ -47,15 +47,15 @@ main = hakyll $ do
     compile $ do
       let posts = recentFirst =<< loadAll "posts/*.md"
       getResourceBody
-        >>= applyAsTemplate                               (indexContext tags posts)
-        >>= loadAndApplyTemplate "templates/default.html" (indexContext tags posts)
+        >>= applyAsTemplate                               (indexCtx tags posts)
+        >>= loadAndApplyTemplate "templates/default.html" (indexCtx tags posts)
         >>= relativizeUrls
 
   match "posts/*.md" $ do
     route   $ setExtension "html"
     compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/post.html"    (postContext tags)
-      >>= loadAndApplyTemplate "templates/default.html" (postContext tags)
+      >>= loadAndApplyTemplate "templates/post.html"    (postCtx tags)
+      >>= loadAndApplyTemplate "templates/default.html" (postCtx tags)
       >>= relativizeUrls
 
   match "images/*" $ do
