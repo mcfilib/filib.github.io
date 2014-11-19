@@ -47,6 +47,7 @@ main = hakyll $ do
   match "index.html" $ do
     let posts   = recentFirst =<< loadAll "posts/*.md"
         context = indexCtx tags posts
+    route idRoute
     compile $ getResourceBody
       >>= applyAsTemplate                               context
       >>= loadAndApplyTemplate "templates/default.html" context
