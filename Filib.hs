@@ -40,11 +40,11 @@ htmlTags getTags' key tags = field key $ \item -> do
   links <- forM tags' $ \tag -> do
     route' <- getRoute $ tagsMakeId tags tag
     return $ renderLink tag route'
-  return . mconcat . intersperse " " . catMaybes $ links
+  return . renderHtml . mconcat . intersperse " " . catMaybes $ links
   where
     renderLink _   Nothing         = Nothing
     renderLink tag (Just filePath) = Just $
-      "<a href=\" " ++ toUrl filePath ++ "\" class=\"post-category x\">" ++ tag ++ "</a>"
+      H.a ! A.href (toValue . toUrl $ filePath) $ toHtml tag
 
 main :: IO ()
 main = hakyll $ do
