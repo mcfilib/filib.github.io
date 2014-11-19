@@ -60,15 +60,11 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" context
       >>= relativizeUrls
 
-  match "images/*" $ do
-    route   idRoute
-    compile copyFileCompiler
-
   match "css/*" $ do
     route   idRoute
     compile compressCssCompiler
 
-  match "favicon.ico" $ do
+  match ("favicon.ico" .||. "images/*") $ do
     route   idRoute
     compile copyFileCompiler
 
