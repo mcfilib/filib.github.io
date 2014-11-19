@@ -36,28 +36,28 @@ main = hakyll $ do
   tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
 
   tagsRules tags $ \tag pattern -> do
+    let posts   = recentFirst =<< loadAll pattern
+        context = tagsCtx tag tags posts
     route   $ setExtension "html"
-    compile $ do
-      let posts = recentFirst =<< loadAll pattern
-      makeItem ""
-        >>= loadAndApplyTemplate "templates/post-list.html" (tagsCtx tag tags posts)
-        >>= loadAndApplyTemplate "templates/default.html"   (tagsCtx tag tags posts)
-        >>= relativizeUrls
+    compile $ makeItem ""
+      >>= loadAndApplyTemplate "templates/post-list.html" context
+      >>= loadAndApplyTemplate "templates/default.html"   context
+      >>= relativizeUrls
 
   match "index.html" $ do
-    route idRoute
-    compile $ do
-      let posts = recentFirst =<< loadAll "posts/*.md"
-      getResourceBody
-        >>= applyAsTemplate                               (indexCtx tags posts)
-        >>= loadAndApplyTemplate "templates/default.html" (indexCtx tags posts)
-        >>= relativizeUrls
+    let posts   = recentFirst =<< loadAll "posts/*.md"
+        context = indexCtx tags posts
+    compile $ getResourceBody
+      >>= applyAsTemplate                               context
+      >>= loadAndApplyTemplate "templates/default.html" context
+      >>= relativizeUrls
 
   match "posts/*.md" $ do
+    let context = postCtx tags
     route   $ setExtension "html"
     compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/post.html"    (postCtx tags)
-      >>= loadAndApplyTemplate "templates/default.html" (postCtx tags)
+      >>= loadAndApplyTemplate "templates/post.html"    context
+      >>= loadAndApplyTemplate "templates/default.html" context
       >>= relativizeUrls
 
   match "images/*" $ do
