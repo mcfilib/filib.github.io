@@ -23,7 +23,7 @@ indexCtx tags posts = mconcat
 postCtx :: Tags -> Context String
 postCtx tags = mconcat
   [ dateField "date" "%B %e %Y"
-  , htmlTagsWith getTags "tags" tags
+  , htmlTags getTags "tags" tags
   , defaultContext
   ]
 
@@ -34,8 +34,8 @@ tagsCtx title tags posts = mconcat
   , defaultContext
   ]
 
-htmlTagsWith :: (Identifier -> Compiler [String]) -> String -> Tags -> Context a
-htmlTagsWith getTags' key tags = field key $ \item -> do
+htmlTags :: (Identifier -> Compiler [String]) -> String -> Tags -> Context a
+htmlTags getTags' key tags = field key $ \item -> do
   tags' <- getTags' $ itemIdentifier item
   links <- forM tags' $ \tag -> do
     route' <- getRoute $ tagsMakeId tags tag
