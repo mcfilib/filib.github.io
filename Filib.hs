@@ -24,7 +24,7 @@ indexCtx tags posts = mconcat
 
 postCtx :: Tags -> Context String
 postCtx tags = mconcat
-  [ dateField "date" "%B %e %Y"
+  [ dateField "date" "%e %B %Y"
   , htmlTags "tags" tags
   , defaultContext
   ]
@@ -56,7 +56,7 @@ main = hakyll $ do
     route   $ setExtension "html"
     compile $ makeItem ""
       >>= loadAndApplyTemplate "templates/post-list.html" context
-      >>= loadAndApplyTemplate "templates/default.html"   context
+      >>= loadAndApplyTemplate "templates/default.html"   defaultContext
       >>= relativizeUrls
 
   match "index.html" $ do
@@ -65,7 +65,7 @@ main = hakyll $ do
     route idRoute
     compile $ getResourceBody
       >>= applyAsTemplate                               context
-      >>= loadAndApplyTemplate "templates/default.html" context
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
   match "posts/*.md" $ do
@@ -73,7 +73,7 @@ main = hakyll $ do
     route   $ setExtension "html"
     compile $ pandocCompiler
       >>= loadAndApplyTemplate "templates/post.html"    context
-      >>= loadAndApplyTemplate "templates/default.html" context
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
   match "css/*" $ do
