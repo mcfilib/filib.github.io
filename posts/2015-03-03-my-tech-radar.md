@@ -4,11 +4,11 @@ author: Philip Cunningham
 tags: radar
 ---
 
-My decisions to learn different technologies have, up until very recently, been 
-fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark 
-it in the back of my mind to come back to later. Unsurprisingly this approach 
-makes reflection tricky because it's difficult to build a career strategy 
-posthumously.
+My decisions to learn different technologies have, up until very recently, been
+fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark
+it in the back of my mind to come back to later. Unsurprisingly this approach is
+riddled with flaws. For one thing, it lacks a clear strategy or structure,
+making it difficult assess successes and shortcomings any larger context.
 
 ## Ansible
 
