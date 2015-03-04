@@ -6,8 +6,9 @@ tags: radar
 
 My decisions to learn different technologies have, up until very recently, been 
 fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark 
-in the back of my mind to come back to later. Unsurprisingly this approach makes 
-reflection tricky because it's difficult to build a career strategy posthumously.
+it in the back of my mind to come back to later. Unsurprisingly this approach 
+makes reflection tricky because it's difficult to build a career strategy 
+posthumously.
 
 ## Ansible
 
