@@ -4,9 +4,10 @@ author: Philip Cunningham
 tags: radar
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+My decisions to learn different technologies have, up until very recently, been 
+fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark 
+in the back of my to come back to later. Unsurprisingly this approach makes 
+reflection tricky because it's difficult to build a posthumous career strategy.
 
 ## Ansible
 
