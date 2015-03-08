@@ -7,7 +7,7 @@ tags: radar
 My decisions to learn different technologies have, up until very recently, been
 fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark
 it to come back to later. Unsurprisingly this approach is not without its flaws.
-The main flaw is that it lacks a clear strategy or structure, making it
+The main one being that it lacks a clear strategy or structure, making it
 difficult assess successes and shortcomings in any larger context.
 
 I've decided to steal [Neal Ford's](http://nealford.com/) idea of building a
@@ -89,6 +89,6 @@ As part of the notification engine I'll be implementing and designing at work
 I'm hoping to use Socket.IO on the client side. It looks like a fairly mature
 project and there's an Haskell implementation of the protocol [available on
 Hackage](https://hackage.haskell.org/package/socket-io) making it a nice fit
-with other technologies on this year's radar.
+with other technologies on my radar radar.
 
 <http://socket.io>
