@@ -62,11 +62,11 @@ some of this pain.
 
 *assess*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+Rust's type system provides hope that someone like me could do systems 
+programming without shooting myself in the foot. I suspect it's a language worth 
+learning before they hit version `1.0` in a few months' time.
 
-<http://example.com>
+<http://www.rust-lang.org>
 
 ## Snap
 
