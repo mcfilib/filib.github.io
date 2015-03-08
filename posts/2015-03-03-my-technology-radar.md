@@ -63,8 +63,8 @@ some of this pain.
 *assess*
 
 Rust's type system provides hope that someone like me could do systems
-programming without shooting myself in the foot. I suspect it's a language worth
-learning before they hit version `1.0` in a few months' time.
+programming without shooting themself in the foot. I suspect it's a language 
+worth learning before they hit version `1.0` in a few months' time.
 
 <http://www.rust-lang.org>
 
