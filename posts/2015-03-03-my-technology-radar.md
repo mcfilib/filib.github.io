@@ -20,9 +20,9 @@ ado here are the technologies that are currently on my radar.
 *trial*
 
 I've used Chef and found the experience frustrating. I'm trialling Ansible to
-see if turns out to be a smaller and simpler automation solution by piloting it
-at work. I'm doing this by writing a playbook to manage deployment and
-provisioning of a small Haskell web service that I wrote.
+see if turns out to be a smaller and simpler automation solution by writing a
+playbook to manage deployment and provisioning of a small Haskell web service
+that I wrote at work.
 
 <http://www.ansible.com>
 
