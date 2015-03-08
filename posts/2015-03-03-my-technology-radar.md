@@ -41,7 +41,9 @@ I'm piloting it a work by creating a small notification system.
 *adopt*
 
 I'm already totally sold on Haskell. The type system offers a powerful way to
-explore solution space in a very abstract way and capture invariants.
+capture invariants and explore solution space in a very abstract way, whilst the
+type checker provides fast feedback about whether our programs adhere to our
+design intention.
 
 <https://www.haskell.org>
 
