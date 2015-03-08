@@ -19,10 +19,10 @@ ado here are the technologies that are currently on my radar.
 
 *trial*
 
-I've used Chef and found the experience frustrating. I'm hoping Ansible turns
-out to be a smaller and simpler automation solution. I'm piloting it at
-work by writing a playbook to manage deployment and provisioning of a small
-Haskell web service.
+I've used Chef and found the experience frustrating. I'm trialling Ansible to 
+see if turns out to be a smaller and simpler automation solution by piloting it 
+at work. I'm doing this by writing a playbook to manage deployment and 
+provisioning of a small Haskell web service that I wrote.
 
 <http://www.ansible.com>
 
@@ -32,8 +32,8 @@ Haskell web service.
 
 Kafka is [publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
 messaging rethought as a distributed [commit log](https://stackoverflow.com/questions/2582889/what-is-a-commit-log).
-It looks like a mature and well-designed project and I hope to pilot it a work
-by designing and implementing a notification engine.
+It looks like a mature and well-designed project and I hope to pilot it at work
+by designing and implementing a real-time notification engine.
 
 <https://kafka.apache.org>
 
@@ -85,7 +85,7 @@ that enable self-contained pieces of functionality to be easily composed.
 
 *trial*
 
-As part of the notification engine I'll be implementing and designing at work
+As part of the real-time notification engine I'll be implementing and designing
 I'm hoping to use Socket.IO on the client side. It looks like a fairly mature
 project and there's an Haskell implementation of the protocol [available on
 Hackage](https://hackage.haskell.org/package/socket-io) making it a nice fit
