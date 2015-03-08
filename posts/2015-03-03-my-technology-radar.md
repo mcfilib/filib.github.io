@@ -43,7 +43,7 @@ I'm piloting it a work by creating a small notification system.
 I'm already totally sold on Haskell. The type system offers a powerful way to
 capture invariants and explore solution space in a very abstract way, whilst the
 type checker provides fast feedback about whether our programs adhere to these
-invariants.
+invariants. I hope to write a lot more Haskell this year.
 
 <https://www.haskell.org>
 
