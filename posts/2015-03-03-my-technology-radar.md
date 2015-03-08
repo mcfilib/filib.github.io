@@ -71,9 +71,9 @@ Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
 
 *assess*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+Snap is web development framework written in Haskell. It provides an interesting
+abstraction called [snaplets](http://snapframework.com/docs/tutorials/snaplets-tutorial)
+that let you compose self-contained pieces of functionality.
 
 <http://snapframework.com>
 
