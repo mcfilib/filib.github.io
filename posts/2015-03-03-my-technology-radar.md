@@ -64,7 +64,7 @@ some of this pain.
 
 Rust's type system provides hope that someone like me could do systems
 programming without shooting themselves in the foot. I suspect it's a language 
-worth learning before they hit version `1.0` in a few months' time.
+worth learning before it hits version `1.0` in a few months' time.
 
 <http://www.rust-lang.org>
 
@@ -85,8 +85,9 @@ that enable self-contained pieces of functionality to be easily composed.
 
 *trial*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+As part of the notification engine I'll be implementing and designing at work 
+I'm hoping to use Socket.IO on the client side. It looks like a fairly mature 
+project and there's an Haskell implementation of the protocol [available on 
+Hackage](https://hackage.haskell.org/package/socket-io).
 
 <http://socket.io>
