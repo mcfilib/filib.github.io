@@ -20,7 +20,7 @@ ado here are the technologies that are currently on my radar.
 *trial*
 
 I've used Chef and found the experience frustrating. I'm hoping Ansible turns
-out to be a smaller and simpler alternative to automation. I'm piloting it at
+out to be a smaller and simpler automation solution. I'm piloting it at
 work by writing a playbook to manage deployment and provisioning of a small
 Haskell web service.
 
