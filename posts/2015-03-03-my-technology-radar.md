@@ -19,9 +19,9 @@ ado here are the technologies that are currently on my radar.
 
 *trial*
 
-I've used Chef and found the experience frustrating. I'm trialling Ansible to 
-see if turns out to be a smaller and simpler automation solution by piloting it 
-at work. I'm doing this by writing a playbook to manage deployment and 
+I've used Chef and found the experience frustrating. I'm trialling Ansible to
+see if turns out to be a smaller and simpler automation solution by piloting it
+at work. I'm doing this by writing a playbook to manage deployment and
 provisioning of a small Haskell web service that I wrote.
 
 <http://www.ansible.com>
@@ -85,9 +85,9 @@ that enable self-contained pieces of functionality to be easily composed.
 
 *trial*
 
-As part of the real-time notification engine I'll working on I'm planning to use 
-Socket.IO on the client side. It looks like a fairly mature project and there's 
-an Haskell implementation of the protocol [available on Hackage](https://hackage.haskell.org/package/socket-io) 
+As part of the real-time notification engine I'll be working on, I'm planning to
+use Socket.IO on the client side. It looks like a fairly mature project and
+there's a Haskell implementation of the protocol [available on Hackage](https://hackage.haskell.org/package/socket-io)
 making it a nice fit with other technologies on my radar.
 
 <http://socket.io>
