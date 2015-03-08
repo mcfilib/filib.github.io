@@ -32,7 +32,8 @@ Haskell web service.
 
 Kafka is [publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
 messaging rethought as a distributed [commit log](https://stackoverflow.com/questions/2582889/what-is-a-commit-log).
-I'm piloting it a work by creating a small notification system.
+It looks like a mature and well-designed project and I hope to pilot it a work
+by designing and implementing a notification engine.
 
 <https://kafka.apache.org>
 
