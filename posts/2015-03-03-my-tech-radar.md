@@ -6,9 +6,14 @@ tags: radar
 
 My decisions to learn different technologies have, up until very recently, been
 fairly ad-hoc. I'd hear about some interesting or novel technology and bookmark
-it in the back of my mind to come back to later. Unsurprisingly this approach is
-riddled with flaws. For one thing, it lacks a clear strategy or structure,
-making it difficult assess successes and shortcomings any larger context.
+it to come back to later. Unsurprisingly this approach is not without its flaws.
+The main flaw is that it lacks a clear strategy or structure, making it 
+difficult assess successes and shortcomings in any larger context.
+
+I've decided to steal [Neal Ford's](http://nealford.com/) idea of building a
+[tech radar](http://devchat.tv/ruby-rogues/195-rr-building-your-technology-radar-with-neal-ford)
+in order to better structure my learning in the next six months. Without further
+ado here are the technologies that are currently on my radar.
 
 ## Ansible
 
