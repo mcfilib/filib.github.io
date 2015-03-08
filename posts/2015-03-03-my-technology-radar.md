@@ -30,9 +30,9 @@ Haskell web service.
 
 *trial*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+Kafka is [publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+messaging rethought as a distributed [commit log](https://stackoverflow.com/questions/2582889/what-is-a-commit-log).
+I'm piloting it a work by creating a small notification system.
 
 <https://kafka.apache.org>
 
