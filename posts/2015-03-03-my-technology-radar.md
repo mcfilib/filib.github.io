@@ -62,8 +62,8 @@ some of this pain.
 
 *assess*
 
-Rust's type system provides hope that someone like me could do systems 
-programming without shooting myself in the foot. I suspect it's a language worth 
+Rust's type system provides hope that someone like me could do systems
+programming without shooting myself in the foot. I suspect it's a language worth
 learning before they hit version `1.0` in a few months' time.
 
 <http://www.rust-lang.org>
@@ -72,7 +72,10 @@ learning before they hit version `1.0` in a few months' time.
 
 *assess*
 
-Snap is web development framework written in Haskell. It provides an interesting
+Snap is web development framework written in Haskell. It occupies an
+exciting position in relation to other Haskell web frameworks in that it's
+larger than [Scotty](http://hackage.haskell.org/package/scotty) but smaller than
+[Yesod](http://hackage.haskell.org/package/yesod). It provides an interesting
 abstraction called [snaplets](http://snapframework.com/docs/tutorials/snaplets-tutorial)
 that let you compose self-contained pieces of functionality.
 
