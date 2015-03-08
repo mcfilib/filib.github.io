@@ -52,9 +52,9 @@ invariants. I hope to write a lot more Haskell this year.
 
 *assess*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+I have to write a lot of JavaScript and I really don't like that I have to write
+a lot of JavaScript. I'm hoping that Purescript's type system can help alleviate
+some of this pain.
 
 <http://www.purescript.org>
 
