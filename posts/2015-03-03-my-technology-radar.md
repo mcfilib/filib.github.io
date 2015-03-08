@@ -85,10 +85,9 @@ that enable self-contained pieces of functionality to be easily composed.
 
 *trial*
 
-As part of the real-time notification engine I'll be implementing and designing
-I'm hoping to use Socket.IO on the client side. It looks like a fairly mature
-project and there's an Haskell implementation of the protocol [available on
-Hackage](https://hackage.haskell.org/package/socket-io) making it a nice fit
-with other technologies on my radar radar.
+As part of the real-time notification engine I'll working on I'm planning to use 
+Socket.IO on the client side. It looks like a fairly mature project and there's 
+an Haskell implementation of the protocol [available on Hackage](https://hackage.haskell.org/package/socket-io) 
+making it a nice fit with other technologies on my radar.
 
 <http://socket.io>
