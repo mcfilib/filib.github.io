@@ -40,9 +40,8 @@ I'm piloting it a work by creating a small notification system.
 
 *adopt*
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi ipsum risus,
-vulputate quis semper eget, rhoncus quis neque. Mauris vitae odio neque.
-Pellentesque lorem nunc, dapibus nec libero eu, facilisis.
+I'm already totally sold on Haskell. The type system offers a powerful way to
+explore solution space in a very abstract way and capture invariants.
 
 <https://www.haskell.org>
 
