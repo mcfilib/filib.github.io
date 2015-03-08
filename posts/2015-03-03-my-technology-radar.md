@@ -63,7 +63,7 @@ some of this pain.
 *assess*
 
 Rust's type system provides hope that someone like me could do systems
-programming without shooting themselves in the foot. I suspect it's a language 
+programming without shooting themselves in the foot. I suspect it's a language
 worth learning before it hits version `1.0` in a few months' time.
 
 <http://www.rust-lang.org>
@@ -75,7 +75,7 @@ worth learning before it hits version `1.0` in a few months' time.
 Snap is web development framework written in Haskell. It occupies an
 exciting position in relation to other Haskell web frameworks in that it's
 larger than [Scotty](http://hackage.haskell.org/package/scotty) but smaller than
-[Yesod](http://hackage.haskell.org/package/yesod). It has a few interesting 
+[Yesod](http://hackage.haskell.org/package/yesod). It has a few interesting
 ideas, including an abstraction called [snaplets](http://snapframework.com/docs/tutorials/snaplets-tutorial)
 that enable self-contained pieces of functionality to be easily composed.
 
@@ -85,9 +85,10 @@ that enable self-contained pieces of functionality to be easily composed.
 
 *trial*
 
-As part of the notification engine I'll be implementing and designing at work 
-I'm hoping to use Socket.IO on the client side. It looks like a fairly mature 
-project and there's an Haskell implementation of the protocol [available on 
-Hackage](https://hackage.haskell.org/package/socket-io).
+As part of the notification engine I'll be implementing and designing at work
+I'm hoping to use Socket.IO on the client side. It looks like a fairly mature
+project and there's an Haskell implementation of the protocol [available on
+Hackage](https://hackage.haskell.org/package/socket-io) making it a nice fit
+with other technologies on this year's radar.
 
 <http://socket.io>
