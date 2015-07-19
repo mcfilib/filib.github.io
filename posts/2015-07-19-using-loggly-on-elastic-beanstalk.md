@@ -1,4 +1,4 @@
----
+ ---
 title: Using Loggly On Elastic Beanstalk
 author: Philip Cunningham
 tags: ops
@@ -8,7 +8,8 @@ This week I had to configure a Rails app running on Elastic Beanstalk
 to use Loggly. Since I don't want anyone to suffer the Elastic
 Beanstalk documentation more than is necessary, I've written this
 short tutorial should you find yourself tasked with the same
-challenge.
+challenge. It assumes you already have a Rails app running on Elastic
+Beanstalk and
 
 ## Configure App
 
@@ -21,9 +22,12 @@ gem 'syslogger', '~> 1.6.0'
 ```
 
 In `config/environments/production.rb` configure your app to use
-`Syslogger` for logging. Replace `"your-app-name"` with... OK, I'm not
-going to insult your intelligence, you can work our what you need to
-replace this with.
+`Syslogger` for logging. Replace `"your-app-name"` with, you guessed
+it, the name of your application. This allows you to easily see logs
+from your app in the Loggly web interface using
+[source groups](https://www.loggly.com/docs/source-groups/). This is
+especially useful if you're using Loggly to aggregate logs from
+multiple apps.
 
 ``` ruby
 # Create new syslogger instance.
@@ -69,7 +73,12 @@ container_commands:
     command: /tmp/loggly_config.sh
 ```
 
-This YAML file downloads Loggly's own Python configuration script and
-configures your container to send logs based on the environment
-variables you've set. You can audit this script at
+This YAML file downloads Loggly's own syslog configuration script and
+sets up your container to send your system logs to Loggly. You can
+audit this script at
 [loggly/install-script](https://github.com/loggly/install-script/blob/master/configure-syslog.py).
+
+## Wrap Up
+
+Re-deploy your app to Elastic Beanstalk and watch as your logs begin
+appearing in Loggly.
