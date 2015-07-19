@@ -25,7 +25,7 @@ In `config/environments/production.rb` configure your app to use
 `Syslogger` for logging. Replace `"your-app-name"` with, you guessed
 it, the name of your application. This allows you to easily see logs
 from your app in the Loggly web interface using
-[source groups](https://www.loggly.com/docs/source-groups/). This is
+[source groups](https://www.loggly.com/docs/source-groups/), which is
 especially useful if you're using Loggly to aggregate logs from
 multiple apps.
 
