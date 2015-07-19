@@ -1,4 +1,4 @@
- ---
+---
 title: Using Loggly On Elastic Beanstalk
 author: Philip Cunningham
 tags: ops
