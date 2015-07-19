@@ -16,8 +16,7 @@ Beanstalk and a general understanding of web apps.
 Add the [syslogger](https://github.com/crohr/syslogger) gem to your Gemfile.
 
 ``` ruby
-# Dead simple Ruby Syslog logger.
-# https://github.com/crohr/syslogger
+# Gemfile
 gem 'syslogger', '~> 1.6.0'
 ```
 
@@ -30,7 +29,7 @@ especially useful if you're using Loggly to aggregate logs from
 multiple apps.
 
 ``` ruby
-# Create new syslogger instance.
+# config/environments/production.rb
 config.logger = Syslogger.new("your-app-name", Syslog::LOG_PID, Syslog::LOG_LOCAL7)
 ```
 
