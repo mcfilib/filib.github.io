@@ -42,7 +42,7 @@ Go [sign up](https://www.loggly.com/signup/) for a
 [Loggly](https://www.loggly.com/) account and
 [create a customer token](https://www.loggly.com/docs/customer-token-authentication-token/).
 
-## Configure Container
+## Configure Container Environment
 
 Go to the Amazon AWS Console and add your Loggly account name and
 customer token to your Elastic Beanstalk app's environment using the
