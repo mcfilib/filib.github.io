@@ -4,7 +4,7 @@ author: Philip Cunningham
 tags: haskell
 ---
 
-```haskell
+``` haskell
 import Prelude hiding (map, head, tail, length)
 
 -- Simple Linked List

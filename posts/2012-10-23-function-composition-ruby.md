@@ -6,7 +6,7 @@ tags: ruby
 
 We can monkey patch `Proc` to add an operator for function composition.
 
-```ruby
+``` ruby
 class Proc
   def comp(f, g)
     -> (*args) { f.(g.(*args)) }
@@ -17,9 +17,9 @@ class Proc
   end
 end
 
-multiply  = -> (x, y) { x * y }
-negative  = -> (x) { -x }
-composed  = negative * multiply
+multiply = -> (x, y) { x * y }
+negative = -> (x) { -x }
+composed = negative * multiply
 
 composed.(9,9) # => -81
 

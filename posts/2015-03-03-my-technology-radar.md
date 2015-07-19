@@ -30,8 +30,10 @@ that I wrote at work.
 
 *trial*
 
-Kafka is [publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
-messaging rethought as a distributed [commit log](https://stackoverflow.com/questions/2582889/what-is-a-commit-log).
+Kafka is
+[publish-subscribe](https://en.wikipedia.org/wiki/Publish%E2%80%93subscribe_pattern)
+messaging rethought as a distributed
+[commit log](https://stackoverflow.com/questions/2582889/what-is-a-commit-log).
 It looks like a mature and well-designed project and I hope to pilot it at work
 by designing and implementing a real-time notification engine.
 
@@ -72,12 +74,13 @@ worth learning before it hits version `1.0` in a few months' time.
 
 *assess*
 
-Snap is web development framework written in Haskell. It occupies an
-exciting position in relation to other Haskell web frameworks in that it's
-larger than [Scotty](http://hackage.haskell.org/package/scotty) but smaller than
+Snap is web development framework written in Haskell. It occupies an exciting
+position in relation to other Haskell web frameworks in that it's larger than
+[Scotty](http://hackage.haskell.org/package/scotty) but smaller than
 [Yesod](http://hackage.haskell.org/package/yesod). It has a few interesting
-ideas, including an abstraction called [snaplets](http://snapframework.com/docs/tutorials/snaplets-tutorial)
-that enable self-contained pieces of functionality to be easily composed.
+ideas, including an abstraction called
+[snaplets](http://snapframework.com/docs/tutorials/snaplets-tutorial) that
+enable self-contained pieces of functionality to be easily composed.
 
 <http://snapframework.com>
 
@@ -87,6 +90,7 @@ that enable self-contained pieces of functionality to be easily composed.
 
 I'm planning to use Socket.IO as part of the real-time notification engine at
 work. It looks like a mature project that has traction in the `js` community and
-there's already a Haskell implementation of the protocol [available on Hackage](https://hackage.haskell.org/package/socket-io).
+there's already a Haskell implementation of the protocol
+[available on Hackage](https://hackage.haskell.org/package/socket-io).
 
 <http://socket.io>
