@@ -48,7 +48,7 @@ customer token to your Elastic Beanstalk app's environment using the
 ## Customise Container
 
 Add the following configuration to `loggly.config` in the `.ebextensions`
-directory in the root of your application.
+directory in the root of your app.
 
 ``` yaml
 # .ebextensions/loggly.config
