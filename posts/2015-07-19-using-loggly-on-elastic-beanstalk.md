@@ -9,7 +9,7 @@ to use Loggly. Since I don't want anyone to suffer the Elastic
 Beanstalk documentation more than is necessary, I've written this
 short tutorial should you find yourself tasked with the same
 challenge. It assumes you already have a Rails app running on Elastic
-Beanstalk and
+Beanstalk and a general understanding of web apps.
 
 ## Configure App
 
