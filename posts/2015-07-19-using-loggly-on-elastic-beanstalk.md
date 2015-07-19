@@ -33,9 +33,6 @@ multiple apps.
 config.logger = Syslogger.new("your-app-name", Syslog::LOG_PID, Syslog::LOG_LOCAL7)
 ```
 
-For more detailed configuration steps, consult the
-[Loggly docs](https://www.loggly.com/docs/rails-logs/).
-
 ## Create Loggly Account
 
 Go [sign up](https://www.loggly.com/signup/) for a
