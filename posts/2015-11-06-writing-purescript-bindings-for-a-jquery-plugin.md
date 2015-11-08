@@ -12,7 +12,7 @@ factor determining the success of the project is that it be delivered on time.
 PureScript is the technology I chose for a new project at work and one of the
 ways it's helping my company deliver our project on time is by allowing us to
 leverage existing JavaScript libraries using its
-[foreign function interface (FFI)](https://en.wikipedia.org/wiki/Foreign_function_interface)
+[foreign function interface (FFI)](https://en.wikipedia.org/wiki/Foreign_function_interface),
 whilst still allowing us to exploit strong typing. The experience of writing FFI
 bindings has been so positive that I wanted to share with you how you might
 write your own bindings for an existing
