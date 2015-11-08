@@ -201,7 +201,7 @@ defaultConfig = { headerTag: HeaderTag "h1"
                 }
 ```
 
-And, finally, Here's what the resulting **defaultConfig** looks like. Now we're
+And, finally, here's what the resulting **defaultConfig** looks like. Now we're
 really done. That wasn't so bad, was it?
 
 ## Conclusion
