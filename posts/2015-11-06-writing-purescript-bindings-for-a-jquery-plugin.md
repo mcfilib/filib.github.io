@@ -29,8 +29,8 @@ familiarity with JavaScript, PureScript and jQuery.
 [PureScript's FFI](https://leanpub.com/purescript/read#leanpub-auto-the-foreign-function-interface)
 allows communication from PureScript code to JavaScript code. It's
 straight-forward and flexible, making it possible to write bindings for even the
-most involved JavaScript. Provided, that is, that you understand the underlying
-runtime representation of what you're dealing with.
+most involved JavaScript code. Provided, that is, that you understand the
+underlying runtime representation of what you're dealing with.
 
 ## Configuration
 
@@ -157,8 +157,8 @@ represents a pure function that takes three arguments.
 Something seems a bit odd here, why is **onFinished** effectful, whilst
 **onFinishing** is pure? Well, the truth is that they are both effectful, but
 since JavaScript offers no means of distinguishing between effectful and pure
-computations, we need to circumvent the type checker ensure functions we pass to
-**onFinishing** have the correct runtime representation.
+computations, we need to circumvent the type checker to ensure functions we pass
+to **onFinishing** have the correct runtime representation.
 
 ``` haskell
 mkFinishing :: forall a. (JQueryEvent -> Int -> Int -> Eff a Boolean)
@@ -174,7 +174,7 @@ jQuery-steps expects a callback that returns a boolean value.
 
 If at this point you're feeling a little uncomfortable, that's OK. Once a value
 is inside **Eff** you shouldn't really be pulling it back out without a very
-good reason. But, we're dealing with JavaScript code here, and managing the
+good reason. But we're dealing with JavaScript code here, and managing the
 impedance mismatch so consumers of our bindings don't have to is probably reason
 enough. In any case, the callback function wouldn't be very useful if it was
 pure!
