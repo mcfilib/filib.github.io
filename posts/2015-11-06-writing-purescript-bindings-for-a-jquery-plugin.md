@@ -19,7 +19,7 @@ share with you how you might write your own bindings for an existing
 
 In this post, together we'll be writing bindings for a subset of the
 functionality of [jQuery-steps](https://github.com/rstaib/jquery-steps); a
-lightweight wizard UI component written for jQuery. This wont be a deep dive
+lightweight wizard UI component written for jQuery. This won't be a deep dive
 into PureScript's FFI but will give you an insight into some of the practical
 considerations involved in using JavaScript code from PureScript. It assumes
 familiarity with JavaScript, PureScript and jQuery.
@@ -155,7 +155,7 @@ type constructor **Fn3** comes from
 [purescript-functions](https://github.com/purescript/purescript-functions) and
 represents a pure function that takes three arguments.
 
-Something seems a bit odd here, why is **onFinished** effectful, whilst
+Something seems a bit odd here - why is **onFinished** effectful, whilst
 **onFinishing** is pure? Well, the truth is that they are both effectful, but
 since JavaScript offers no means of distinguishing between effectful and pure
 computations, we need to circumvent the type checker to ensure functions we pass
@@ -175,10 +175,10 @@ jQuery-steps expects a callback that returns a boolean value.
 
 If at this point you're feeling a little uncomfortable, that's OK. Once a value
 is inside **Eff** you shouldn't really be pulling it back out without a very
-good reason. But we're dealing with JavaScript code here, and managing the
-impedance mismatch so consumers of our bindings don't have to is probably reason
-enough. In any case, the callback function wouldn't be very useful if it was
-pure!
+good reason. But we're dealing with JavaScript code here and managing the
+impedance mismatch, so consumers of our bindings don't have to, is probably
+reason enough. In any case, the callback function wouldn't be very useful if it
+was pure!
 
 ``` haskell
 mkFinished :: forall a. (JQueryEvent -> Int -> Eff a Unit)
