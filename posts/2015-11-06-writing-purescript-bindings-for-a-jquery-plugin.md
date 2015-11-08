@@ -206,7 +206,7 @@ really done. That wasn't so bad, was it?
 ## Conclusion
 
 PureScript lets us easily reuse existing JavaScript libraries with help from its
-its FFI. Being able to reuse code can help us prototype more rapidly by allowing
-us to stand on the shoulders of giants. Combining this property with a strongly
+FFI. Being able to reuse code can help us prototype more rapidly by allowing us
+to stand on the shoulders of giants. Combining this property with a strongly
 typed language can help us when that rapid prototype needs to make its way into
 a production setting.
