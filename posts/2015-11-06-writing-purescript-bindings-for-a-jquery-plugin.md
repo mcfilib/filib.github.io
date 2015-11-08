@@ -72,11 +72,11 @@ type Config = { headerTag :: HeaderTag
 
 We use a
 [type synonym](https://leanpub.com/purescript/read#leanpub-auto-defining-our-types)
-to represent our configuration rather an an
+to represent our configuration rather than an
 [algebraic data type](https://leanpub.com/purescript/read#leanpub-auto-algebraic-data-types)
-(ADT). Much like a newtype, the type synonym's runtime representation
-will have a direct correspondence with what jQuery-steps expects, whereas an
-ADT's constructors would present an extra level of indirection that we'd have to
+(ADT). Much like a newtype, the type synonym's runtime representation will have
+a direct correspondence with what jQuery-steps expects, whereas an ADT's
+constructors would present an extra level of indirection that we'd have to
 handle in our JavaScript wrapper.
 
 ``` haskell
