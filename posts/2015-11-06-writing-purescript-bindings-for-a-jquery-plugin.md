@@ -98,10 +98,11 @@ var defaultConfig = {
 }
 ```
 
-Here's what **defaultConfig** will look like at runtime. Isn't it rather
-lovely that we have that extra layer of type safety when working with our data
-in PureScript, only for it to compile down to a representation that can be
-passed directly to jQuery-steps?
+Here's what **defaultConfig** will look like at runtime. You can see that
+despite adding an extra layer of type safety when working with our configuration
+object in PureScript, we don't pay any extra cost for the abstraction at
+runtime. Practically speaking, this means that we can pass our configuration
+object directly to jQuery-steps.
 
 ``` javascript
 /*global exports, jQuery*/
