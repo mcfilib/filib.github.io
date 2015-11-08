@@ -19,7 +19,7 @@ write your own bindings for an existing
 [jQuery](https://github.com/jquery/jquery) plugin.
 
 In this post, together we'll be writing bindings for a subset of the
-functionality of [jQuery-steps](https://github.com/rstaib/jquery-steps); a
+functionality of [jQuery-steps](https://github.com/rstaib/jquery-steps): a
 lightweight wizard UI component written for jQuery. This won't be a deep dive
 into PureScript's FFI but will give you an insight into some of the practical
 considerations involved in using JavaScript code from PureScript. It assumes
