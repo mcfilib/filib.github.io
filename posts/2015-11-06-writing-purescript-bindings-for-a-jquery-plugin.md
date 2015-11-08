@@ -122,7 +122,8 @@ exports.steps = function (object) {
 
 We define our export function that wraps jQuery-steps by providing a
 [curried](https://leanpub.com/purescript/read#leanpub-auto-curried-functions)
-interface.
+interface. It's worth noting that we're using the FFI style introduced
+[introduced PureScript 0.7](https://github.com/purescript/purescript/wiki/0.7-Migration-Guide#no-more-inline-ffi-code).
 
 ``` haskell
 foreign import steps :: forall eff. JQuery -> Config -> Eff (dom :: DOM | eff) Unit
