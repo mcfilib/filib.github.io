@@ -1,0 +1,8 @@
+resolver: lts-2.22
+system-ghc: false
+install-ghc: true
+packages:
+- '.'
+extra-deps:
+  - hfsevents-0.1.6
+extra-package-dbs: []

@@ -1,4 +1,11 @@
+# Blog
+
+filib.github.io/
+
+# Haskell
+
 dist
+dist-*
 cabal-dev
 *.o
 *.hi
@@ -6,15 +13,43 @@ cabal-dev
 *.chs.h
 *.dyn_o
 *.dyn_hi
-.virtualenv
 .hpc
 .hsenv
 .cabal-sandbox/
 cabal.sandbox.config
-cabal.config
 *.prof
 *.aux
 *.hp
-_site/
-_cache/
-filib.github.io/
+*.eventlog
+.stack-work/
+cabal.project.local
+.HTF/
+
+# Mac
+
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
