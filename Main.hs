@@ -1,19 +1,78 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Control.Applicative ((<$>))
-import Control.Monad                   (forM, forM_)
-import Data.List                       (intersperse)
-import Data.Maybe                      (catMaybes)
-import Data.Monoid                     (mconcat)
-import Hakyll
-import Text.Blaze.Html                 (toHtml, toValue, (!))
-import Text.Blaze.Html.Renderer.String (renderHtml)
 
-import qualified Data.Map                    as M
-import qualified Text.Blaze.Html5            as H
+import           Control.Applicative ((<$>))
+import           Control.Monad (forM, forM_)
+import           Data.List (intersperse)
+import qualified Data.Map as M
+import           Data.Maybe (catMaybes)
+import           Data.Monoid (mconcat)
+import           Hakyll
+import           Hakyll.Web.Feed
+import           Text.Blaze.Html (toHtml, toValue, (!))
+import           Text.Blaze.Html.Renderer.String (renderHtml)
+import qualified Text.Blaze.Html5 as H
 import qualified Text.Blaze.Html5.Attributes as A
+
+--------------------------------------------------------------------------------
+
+-- TYPES
 
 type Field = String
 type Title = String
+
+-- MAIN
+
+main :: IO ()
+main = hakyll $ do
+  tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
+
+  tagsRules tags $ \tag pattern -> do
+    let posts   = recentFirst =<< loadAll pattern
+        context = tagsCtx tag tags posts
+    route   $ setExtension "html"
+    compile $ makeItem ""
+      >>= loadAndApplyTemplate "templates/post-list.html" context
+      >>= loadAndApplyTemplate "templates/default.html"   defaultContext
+      >>= relativizeUrls
+
+  match "index.html" $ do
+    let posts   = recentFirst =<< loadAll "posts/*.md"
+        context = indexCtx tags posts
+    route idRoute
+    compile $ getResourceBody
+      >>= applyAsTemplate context
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+      >>= relativizeUrls
+
+  match "posts/*.md" $ do
+    let context = postCtx tags
+    route   $ setExtension "html"
+    compile $ pandocCompiler
+      >>= loadAndApplyTemplate "templates/post.html" context
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+      >>= relativizeUrls
+
+  match "css/*" $ do
+    route   idRoute
+    compile compressCssCompiler
+
+  match ("favicon.ico" .||. "images/*") $ do
+    route   idRoute
+    compile copyFileCompiler
+
+  match "templates/*" $
+    compile templateCompiler
+
+  create ["rss.xml"] $ do
+    route idRoute
+    compile $ do
+        let feedCtx = postCtx tags `mappend` bodyField "description"
+        posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
+        renderRss myFeedConfiguration feedCtx posts
+
+--------------------------------------------------------------------------------
+
+-- CTX
 
 indexCtx :: Tags -> Compiler [Item String] -> Context String
 indexCtx tags posts = mconcat
@@ -46,42 +105,13 @@ htmlTags key tags = field key $ \item -> do
     renderLink tag (Just filePath) = Just $
       H.a ! A.href (toValue . toUrl $ filePath) ! A.class_ "post-category green" $ toHtml tag
 
-main :: IO ()
-main = hakyll $ do
-  tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
+-- FEED
 
-  tagsRules tags $ \tag pattern -> do
-    let posts   = recentFirst =<< loadAll pattern
-        context = tagsCtx tag tags posts
-    route   $ setExtension "html"
-    compile $ makeItem ""
-      >>= loadAndApplyTemplate "templates/post-list.html" context
-      >>= loadAndApplyTemplate "templates/default.html"   defaultContext
-      >>= relativizeUrls
-
-  match "index.html" $ do
-    let posts   = recentFirst =<< loadAll "posts/*.md"
-        context = indexCtx tags posts
-    route idRoute
-    compile $ getResourceBody
-      >>= applyAsTemplate                               context
-      >>= loadAndApplyTemplate "templates/default.html" defaultContext
-      >>= relativizeUrls
-
-  match "posts/*.md" $ do
-    let context = postCtx tags
-    route   $ setExtension "html"
-    compile $ pandocCompiler
-      >>= loadAndApplyTemplate "templates/post.html"    context
-      >>= loadAndApplyTemplate "templates/default.html" defaultContext
-      >>= relativizeUrls
-
-  match "css/*" $ do
-    route   idRoute
-    compile compressCssCompiler
-
-  match ("favicon.ico" .||. "images/*") $ do
-    route   idRoute
-    compile copyFileCompiler
-
-  match "templates/*" $ compile templateCompiler
+myFeedConfiguration :: FeedConfiguration
+myFeedConfiguration = FeedConfiguration
+    { feedTitle       = "Philip Cunningham: music, code and stuff."
+    , feedDescription = "Philip is a Ruby and Haskell developer currently working remotely from Penarth."
+    , feedAuthorName  = "Philip Cunningham"
+    , feedAuthorEmail = "hello@filib.io"
+    , feedRoot        = "https://filib.io"
+    }
