@@ -1,9 +1,7 @@
-resolver: lts-2.22
+resolver: lts-11.11
 system-ghc: false
 install-ghc: true
 packages:
 - '.'
-extra-deps:
-  - Cabal-1.24.2.0
-  - hfsevents-0.1.6
+extra-deps: []
 extra-package-dbs: []
