@@ -3,7 +3,7 @@ version:            0.1.0.0
 build-type:         Simple
 cabal-version:      >= 1.10
 
-executable Filib
+executable filib-io
   main-is:          Filib.hs
   build-depends:    base == 4.*,
                     blaze-html,
