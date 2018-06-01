@@ -1,5 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+--------------------------------------------------------------------------------
+
 import           Control.Applicative ((<$>))
 import           Control.Monad (forM, forM_)
 import           Data.List (intersperse)
@@ -20,12 +22,26 @@ import qualified Text.Blaze.Html5.Attributes as A
 type Field = String
 type Title = String
 
+--------------------------------------------------------------------------------
+
 -- MAIN
 
 main :: IO ()
 main = hakyll $ do
+  -- Compress CSS into one file
+  match "css/*" $ do
+    route   idRoute
+    compile compressCssCompiler
+
+  -- Static files
+  match ("favicon.ico" .||. "images/*") $ do
+    route   idRoute
+    compile copyFileCompiler
+
+  -- Build tags
   tags <- buildTags "posts/*.md" $ fromCapture "tags/*.html"
 
+  -- Tags rules
   tagsRules tags $ \tag pattern -> do
     let posts   = recentFirst =<< loadAll pattern
         context = tagsCtx tag tags posts
@@ -35,6 +51,11 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html"   defaultContext
       >>= relativizeUrls
 
+  -- Read templates
+  match "templates/*" $
+    compile templateCompiler
+
+  -- Index
   match "index.html" $ do
     let posts   = recentFirst =<< loadAll "posts/*.md"
         context = indexCtx tags posts
@@ -44,6 +65,7 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
+  -- Render each and every post
   match "posts/*.md" $ do
     let context = postCtx tags
     route   $ setExtension "html"
@@ -52,24 +74,14 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
-  match "css/*" $ do
-    route   idRoute
-    compile compressCssCompiler
-
-  match ("favicon.ico" .||. "images/*") $ do
-    route   idRoute
-    compile copyFileCompiler
-
-  match "templates/*" $
-    compile templateCompiler
-
+  -- Render RSS feed
   create ["rss.xml"] $ do
     route idRoute
     compile $ do
       let feedCtx = postCtx tags `mappend` bodyField "description"
           snapshots = loadAllSnapshots "posts/*" "content"
       posts <- snapshots >>= fmap (take 10) . recentFirst
-      renderRss myFeedConfiguration feedCtx posts
+      renderRss feedConfig feedCtx posts
 
 --------------------------------------------------------------------------------
 
@@ -106,10 +118,12 @@ htmlTags key tags = field key $ \item -> do
     renderLink tag (Just filePath) = Just $
       H.a ! A.href (toValue . toUrl $ filePath) ! A.class_ "post-category green" $ toHtml tag
 
+--------------------------------------------------------------------------------
+
 -- FEED
 
-myFeedConfiguration :: FeedConfiguration
-myFeedConfiguration = FeedConfiguration
+feedConfig :: FeedConfiguration
+feedConfig = FeedConfiguration
     { feedTitle       = "Philip Cunningham: music, code and stuff."
     , feedDescription = "Philip is a Ruby and Haskell developer currently working remotely from Penarth."
     , feedAuthorName  = "Philip Cunningham"
