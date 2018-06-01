@@ -66,9 +66,10 @@ main = hakyll $ do
   create ["rss.xml"] $ do
     route idRoute
     compile $ do
-        let feedCtx = postCtx tags `mappend` bodyField "description"
-        posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/*" "content"
-        renderRss myFeedConfiguration feedCtx posts
+      let feedCtx = postCtx tags `mappend` bodyField "description"
+          snapshots = loadAllSnapshots "posts/*" "content"
+      posts <- snapshots >>= fmap (take 10) . recentFirst
+      renderRss myFeedConfiguration feedCtx posts
 
 --------------------------------------------------------------------------------
 
