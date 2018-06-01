@@ -71,6 +71,7 @@ main = hakyll $ do
     route   $ setExtension "html"
     compile $ pandocCompiler
       >>= loadAndApplyTemplate "templates/post.html" context
+      >>= saveSnapshot "content"
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
