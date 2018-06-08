@@ -65,6 +65,20 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" defaultContext
       >>= relativizeUrls
 
+  -- About
+  match "about.html" $ do
+    route idRoute
+    compile $ getResourceBody
+      >>= applyAsTemplate defaultContext
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+
+  -- CV
+  match "cv.html" $ do
+    route idRoute
+    compile $ getResourceBody
+      >>= applyAsTemplate defaultContext
+      >>= loadAndApplyTemplate "templates/default.html" defaultContext
+
   -- Render each and every post
   match "posts/*.md" $ do
     let context = postCtx tags
@@ -97,7 +111,7 @@ indexCtx tags posts = mconcat
 
 postCtx :: Tags -> Context String
 postCtx tags = mconcat
-  [ dateField "date" "%e %B %Y"
+  [ dateField "date" "%Y-%m-%d"
   , htmlTags "tags" tags
   , defaultContext
   ]
