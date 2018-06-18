@@ -12,35 +12,37 @@
       $title$
       $endif$
     </title>
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/filib.css">
   </head>
   <body>
-    <div>
-      <div>
-        <nav>
-          <ul>
-            <li>
-              <a href="/">
-                Home
-              </a>
-            </li>
-            </li>
-            <li>
-              <a href="/about.html">
-                About
-              </a>
-            </li>
-            <li>
-              <a href="/rss.xml">
-                RSS
-              </a>
-            </li>
-          </ul>
-        </nav>
+    <div class="container">
+      <div class="row">
+        <div class="column one-third">
+          <nav class="masthead">
+            <ul>
+              <li>
+                <a href="/">
+                  Home
+                </a>
+              </li>
+              </li>
+              <li>
+                <a href="/about.html">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="/rss.xml">
+                  RSS
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
       </div>
-    </div>
-
-    <div>
-      <div>
+      <hr/>
+      <div class="row">
         $body$
       </div>
     </div>
