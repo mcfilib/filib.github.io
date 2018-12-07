@@ -13,16 +13,33 @@ jobs:
             - stack-{{ .Branch }}
             - stack-
       - run:
-          name: Dependencies
-          command: make setup
+          name: Setup
+          command: stack setup
       - run:
-          name: Build
-          command: make build
+          name: Dependencies
+          command: stack build --dependencies-only
       - save_cache:
           key: stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
           paths:
             - ~/.stack
             - ./.stack-work
       - run:
-          name: Deploy
-          command: make deploy
+          name: Build
+          command: stack build --pedantic
+      - run:
+          name: Generate
+          command: stack exec filib-io build
+      - run:
+          name: Publish
+          working_directory: "./_site"
+          command: |
+            # init
+            git init
+            git config user.name  'CircleCI'
+            git config user.email 'job@circleci.com'
+            # add
+            git add .
+            git commit -m "publish $CIRCLE_SHA1 [ci skip]"
+            # push
+            git remote add origin "$CIRCLE_REPOSITORY_URL"
+            git push --force origin master
