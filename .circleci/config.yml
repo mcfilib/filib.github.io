@@ -3,6 +3,9 @@ version: 2.0
 
 jobs:
   build:
+    branches:
+      only:
+        - develop
     docker:
       - image: fpco/stack-build:lts-11.11
     steps:
