@@ -28,7 +28,7 @@ jobs:
             - ./.stack-work
       - run:
           name: Build
-          command: stack build --pedantic
+          command: stack build
       - run:
           name: Generate
           command: stack exec filib-io build
