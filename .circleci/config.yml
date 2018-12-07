@@ -35,8 +35,8 @@ jobs:
           command: |
             # init
             git init
-            git config user.name  'CircleCI'
-            git config user.email 'job@circleci.com'
+            git config user.name  "CircleCI"
+            git config user.email "job@circleci.com"
             # add
             git add .
             git commit -m "publish $CIRCLE_SHA1 [ci skip]"
