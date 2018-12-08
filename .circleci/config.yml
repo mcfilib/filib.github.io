@@ -44,5 +44,4 @@ jobs:
             git add .
             git commit -m "publish $CIRCLE_SHA1 [ci skip]"
             # push
-            git remote add origin "$CIRCLE_REPOSITORY_URL"
-            git push --force origin master
+            git push --force https://${GITHUB_ACCESS_TOKEN}@github.com/mcfilib/mcfilib.github.io.git master
