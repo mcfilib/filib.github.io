@@ -83,7 +83,7 @@ serverProcess = forever $ do
 
 Our example uses some helper functions that aren't present in `distributed-process` and are included in the code snippet below.
 
-```
+``` haskell
 -- PROCESS HELPERS
 
 
