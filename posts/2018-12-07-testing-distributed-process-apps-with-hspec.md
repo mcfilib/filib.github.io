@@ -8,7 +8,7 @@ tags: distributed-process, haskell, hspec, testing
 
 ## Application
 
-Our example revolves around a fairly simple [client-server](https://en.wikipedia.org/wiki/Client%E2%80%93server_model) application. The client process can send data to the server and print responses to the console, whilst the server performs calculations and sends the results back to clients.
+Our example revolves around a fairly simple [client-server](https://en.wikipedia.org/wiki/Client%E2%80%93server_model) application. The client process can send data to the server and output responses to the console, whilst the server performs calculations and sends the results back to clients.
 
 ``` haskell
 {-# LANGUAGE DeriveGeneric #-}
@@ -142,7 +142,7 @@ We'll start off by writing a custom [HSpec](https://hspec.github.io/writing-spec
 
 The [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) serves two purposes; it will us to communicate state and act as locking mechanism ([`takeMVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar) blocks until it's full). Whilst the [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode) will allow us to spin up adhoc processes when we need them.
 
-The functions `aroundApp` and `withApp` are the step in bridging these two worlds.
+The functions `aroundApp` and `withApp` are the first step in bridging these two worlds.
 
 ``` haskell
 -- SPEC HELPERS
@@ -176,7 +176,7 @@ writer mvar = do
   liftIO $ putMVar mvar msg
 ```
 
-Using these functions we'll write our first test. It'll be useful that we're confident that our application spins up all of the relevant processes it needs to function correctly. We'll do this by writing by starting our application, checking whether the process is registered and putting the result in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
+Using these functions we'll write our first test. It's important that we're confident our application spins up all of the relevant processes it needs to function correctly. We'll do this by writing by starting our application, checking whether the process is registered and putting the result in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
 
 ``` haskell
 -- SPECS
@@ -198,7 +198,7 @@ main = hspec $ do
         any isNothing mbPids `shouldBe` False
 ```
 
-From here we'll want to test that our processes communicate with one another as we expect. We do this by starting a client process and registering a server [test double](https://martinfowler.com/bliki/TestDouble.html) spie that'll listen for messages sent to it using the `writer` function.
+From here we'll want to test that our processes communicate with one another as we expect. We do this by starting a client process and registering a server [test double](https://martinfowler.com/bliki/TestDouble.html) that'll listen for messages sent to it using the `writer` function.
 
 ``` haskell
   let
@@ -237,4 +237,8 @@ Finally we'll want to test our server process calculates results correctly. We d
 
 ## Conclusion
 
-The approach described in this post reflects some of my background in object oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing. There are obviously some shortcomings to this approach — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) forces you to take feels very consistent, allows to you to write plenty of tests and is a delight to write asynchronous applications.
+The approach described in this post reflects some of my background in object oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing.
+
+There are obviously some shortcomings to this approach — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) makes you to take is very consistent and makes it a delight to write asynchronous applications.
+
+Hopefully what I've written here offers some insight into how you might begin testing your [`distributed-process`](https://github.com/haskell-distributed/distributed-process) applications.
