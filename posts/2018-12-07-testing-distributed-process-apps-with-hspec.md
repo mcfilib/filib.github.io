@@ -138,7 +138,7 @@ namedSend name msg = do
 
 ## Testing
 
-One thing that I found useful when working with `distributed-process` was to test that processes were up and running. The way that I achieved this was by writing a custom [HSpect](https://hspec.github.io/writing-specs.html) hook that could communicate with a shared [MVar](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html) and then writing a [test double](https://martinfowler.com/bliki/TestDouble.html).
+One thing that's useful to know is that our processes are up and running when we run our application. We can achieve this by writing a custom [HSpec](https://hspec.github.io/writing-specs.html) hook to communicate between our application and our tests. Our hook will spin up an application and thread around a shared [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) and a [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode). The [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) serves two purposes; it will us to communicate state and act as locking mechanism ([`takeMVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar) blocks until it's full). Whilst the [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode) will allow us to spin up adhoc processes when we need them.
 
 ``` haskell
 -- SPECS
@@ -149,8 +149,8 @@ main = hspec $ do
   let
     double mvar node = do
       _ <- app node
-      x <- whereis "client" -- check if the client is registered
-      y <- whereis "server" -- check if the server is registered
+      x <- whereis "client"
+      y <- whereis "server"
       liftIO $ putMVar mvar [x, y]
 
   aroundApp double $
@@ -159,6 +159,8 @@ main = hspec $ do
         mbPids <- takeMVar mvar
         any isNothing mbPids `shouldBe` False
 ```
+
+The functions `aroundApp` and `withApp`, defined below, are how we'll bridge these two worlds.
 
 ``` haskell
 -- SPEC HELPERS
@@ -176,9 +178,9 @@ aroundApp app =
 withApp :: (MVar a -> LocalNode -> Process ())
         -> (((MVar a, LocalNode) -> IO ()) -> IO ())
 withApp app action = do
-  mvar           <- newEmptyMVar
+  mvar              <- newEmptyMVar
   (node, transport) <- run $ app mvar
-  _              <- action (mvar, node) `onException` closeTransport transport
+  _                 <- action (mvar, node) `onException` closeTransport transport
   closeTransport transport
 ```
 
