@@ -138,29 +138,11 @@ namedSend name msg = do
 
 ## Testing
 
-One thing that's useful to know is that our processes are up and running when we run our application. We can achieve this by writing a custom [HSpec](https://hspec.github.io/writing-specs.html) hook to communicate between our application and our tests. Our hook will spin up an application and thread around a shared [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) and a [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode). The [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) serves two purposes; it will us to communicate state and act as locking mechanism ([`takeMVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar) blocks until it's full). Whilst the [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode) will allow us to spin up adhoc processes when we need them.
+We'll start off by writing a custom [HSpec](https://hspec.github.io/writing-specs.html) hook to communicate between our application and our tests. Our hook will spin up an application and thread around a shared [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) and a [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode).
 
-``` haskell
--- SPECS
+The [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) serves two purposes; it will us to communicate state and act as locking mechanism ([`takeMVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar) blocks until it's full). Whilst the [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode) will allow us to spin up adhoc processes when we need them.
 
-
-main :: IO ()
-main = hspec $ do
-  let
-    double mvar node = do
-      _ <- app node
-      x <- whereis "client"
-      y <- whereis "server"
-      liftIO $ putMVar mvar [x, y]
-
-  aroundApp double $
-    describe "app" $ do
-      it "should spin up every process" $ \(mvar, _) -> do
-        mbPids <- takeMVar mvar
-        any isNothing mbPids `shouldBe` False
-```
-
-The functions `aroundApp` and `withApp`, defined below, are how we'll bridge these two worlds.
+The functions `aroundApp` and `withApp`, defined below, are what we'll use to bridge these two worlds.
 
 ``` haskell
 -- SPEC HELPERS
@@ -184,6 +166,38 @@ withApp app action = do
   closeTransport transport
 ```
 
+Another way we'll bridge these two worlds is by defining a function that'll listen for messages and put them in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
+
+``` haskell
+-- | Listens for messages and writes msg to an mvar
+writer :: (Binary a, Show a, Typeable a) => MVar a -> Process ()
+writer mvar = do
+  msg <- expect
+  liftIO $ putMVar mvar msg
+```
+
+The first test we'll write will be one that tests whether or not our application spins up all of the relevant processes it needs to function correctly. It does this by starting the application, checking whether the process is registered and putting the result in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
+
+``` haskell
+-- SPECS
+
+
+main :: IO ()
+main = hspec $ do
+  let
+    double mvar node = do
+      _ <- app node
+      x <- whereis "client"
+      y <- whereis "server"
+      liftIO $ putMVar mvar [x, y]
+
+  aroundApp double $
+    describe "app" $ do
+      it "should spin up every process" $ \(mvar, _) -> do
+        mbPids <- takeMVar mvar
+        any isNothing mbPids `shouldBe` False
+```
+
 ``` haskell
   let
     double mvar node = do
@@ -199,7 +213,9 @@ withApp app action = do
 
         Calc _ ints <- takeMVar mvar
         ints `shouldBe` [1, 2, 3, 4]
+```
 
+``` haskell
   let
     double mvar node = do
       void $ newProcess node "server" serverProcess
@@ -222,11 +238,3 @@ withApp app action = do
 - lets us mock external resources
 - lets us avoid setting up the whole system
 - lets us keep tests fast
-
-``` haskell
--- | Listens for messages and writes msg to an mvar
-writer :: (Binary a, Show a, Typeable a) => MVar a -> Process ()
-writer mvar = do
-  msg <- expect
-  liftIO $ putMVar mvar msg
-```
