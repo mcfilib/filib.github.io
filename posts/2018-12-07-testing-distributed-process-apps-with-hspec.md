@@ -10,7 +10,7 @@ tags: distributed-process, haskell, hspec, testing
 
 Our example revolves around a fairly simple [client-server](https://en.wikipedia.org/wiki/Client%E2%80%93server_model) application. The client process can send data to the serve and print responses to the console, whilst the server performs calculations and sends the results back to clients.
 
-```
+``` haskell
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TupleSections #-}
@@ -139,8 +139,8 @@ namedSend name msg = do
 ## Testing
 
 One thing that I found useful when working with `distributed-process` was to test that processes were up and running. The way that I achieved this was by writing a custom [HSpect](https://hspec.github.io/writing-specs.html) hook that could communicate with a shared [MVar](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html) and then writing a [test double](https://martinfowler.com/bliki/TestDouble.html).
-```
 
+``` haskell
 -- SPECS
 
 
@@ -160,7 +160,7 @@ main = hspec $ do
         any isNothing mbPids `shouldBe` False
 ```
 
-```
+``` haskell
 -- SPEC HELPERS
 
 
@@ -182,7 +182,7 @@ withApp app action = do
   closeTransport transport
 ```
 
-```
+``` haskell
   let
     double mvar node = do
       _ <- newProcess node "client" clientProcess
@@ -221,7 +221,7 @@ withApp app action = do
 - lets us avoid setting up the whole system
 - lets us keep tests fast
 
-```
+``` haskell
 -- | Listens for messages and writes msg to an mvar
 writer :: (Binary a, Show a, Typeable a) => MVar a -> Process ()
 writer mvar = do
