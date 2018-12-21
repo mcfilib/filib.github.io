@@ -65,7 +65,7 @@ clientProcess = forever $ do
 
 
 data ServerMsg =
-    Calc ProcessId [Int]
+  Calc ProcessId [Int]
   deriving (Eq, Generic, Show)
 
 
@@ -81,7 +81,7 @@ serverProcess = forever $ do
       send sender $ Result (sum ints)
 ```
 
-Our example uses some helper functions that aren't present in [`distributed-process`](https://github.com/haskell-distributed/distributed-process) and are included in the code snippet below.
+Our example uses some helper functions that aren't present in [`distributed-process`](https://github.com/haskell-distributed/distributed-process) and are included in the code snippet below to let you follow along at home.
 
 ``` haskell
 -- PROCESS HELPERS
