@@ -138,7 +138,7 @@ namedSend name msg = do
 
 ## Testing
 
-We'll start off by writing a custom [HSpec](https://hspec.github.io/writing-specs.html) hook to between our application and our tests. Our hook will spin up an application and thread around a shared [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) and a [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode).
+We'll start off by writing a custom [HSpec](https://hspec.github.io/writing-specs.html) hook to make a bridge between our application and our tests. Our hook will spin up an application and thread around a shared [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) and a [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode).
 
 The [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar) serves two purposes; it will us to communicate state and act as locking mechanism ([`takeMVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar) blocks until it's full). Whilst the [`LocalNode`](http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode) will allow us to spin up adhoc processes when we need them.
 
