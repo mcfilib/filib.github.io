@@ -176,7 +176,7 @@ writer mvar = do
   liftIO $ putMVar mvar msg
 ```
 
-Using these functions we'll write our first test. It's important that we're confident our application spins up all of the relevant processes it needs to function correctly. We'll do this by writing by starting our application, checking whether the process is registered and putting the result in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
+Using these functions we'll write our first test. It's important that we're confident our application spins up all of the relevant processes it needs to function correctly. We'll do this by starting our application, checking whether the process is registered and putting the result in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
 
 ``` haskell
 -- SPECS
@@ -239,6 +239,6 @@ Finally we'll want to test our server process calculates results correctly. We d
 
 The approach described in this post reflects some of my background in object oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing.
 
-There are obviously some shortcomings to this approach — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) makes you to take is very consistent and makes it a delight to write asynchronous applications.
+There are obviously some shortcomings to the techniques described — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) makes you to take is very consistent and makes it pleasant to write asynchronous applications.
 
 Hopefully what I've written here offers some insight into how you might begin testing your [`distributed-process`](https://github.com/haskell-distributed/distributed-process) applications.
