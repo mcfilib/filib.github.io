@@ -217,7 +217,7 @@ From here we'll want to test that our processes communicate with one another as 
         ints `shouldBe` [1, 2, 3, 4]
 ```
 
-Finally we'll want to test our server process calculates results correctly. We do this by starting our server process and sending a message to it.
+Finally we'll want to test our server process calculates results correctly and sends them back to clients. We do this by starting our server process and sending a message to it from a [test double](https://martinfowler.com/bliki/TestDouble.html) client process.
 
 ``` haskell
   let
@@ -229,7 +229,7 @@ Finally we'll want to test our server process calculates results correctly. We d
       it "should call the client process with the result" $ \(mvar, node) -> do
         _ <- forkProcess node $ do
           pid <- newProcess node "client" $ writer mvar
-          namedSend "server" (Calc pid [1, 2, 3, 4])
+          namedSend "server" $ Calc pid [1, 2, 3, 4]
 
         Result i <- takeMVar mvar
         i `shouldBe` 10
