@@ -19,12 +19,11 @@ Our example revolves around a fairly simple [client-server](https://en.wikipedia
 module Main where
 
 
-import Control.Distributed.Process hiding (onException)
-import Control.Distributed.Process.Node
-import Data.Binary
-import GHC.Generics
+import Control.Distributed.Process (Process, ProcessId, expect, getSelfPid, register, say, send, whereis)
+import Control.Distributed.Process.Node (LocalNode, initRemoteTable, forkProcess, newLocalNode, runProcess)
+import Data.Binary (Binary)
 import Network.Transport (Transport(..))
-import Network.Transport.TCP
+import Network.Transport.TCP (createTransport, defaultTCPParameters)
 import Prelude (String)
 import Protolude
 import Test.Hspec
@@ -162,7 +161,7 @@ withApp :: (MVar a -> LocalNode -> Process ())
 withApp app action = do
   mvar              <- newEmptyMVar
   (node, transport) <- run $ app mvar
-  _                 <- action (mvar, node) `onException` closeTransport transport
+  _                 <- finally (action (mvar, node)) (closeTransport transport)
   closeTransport transport
 ```
 
