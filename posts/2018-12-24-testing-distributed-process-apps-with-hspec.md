@@ -161,7 +161,7 @@ withApp :: (MVar a -> LocalNode -> Process ())
 withApp app action = do
   mvar              <- newEmptyMVar
   (node, transport) <- run $ app mvar
-  _                 <- finally (action (mvar, node)) (closeTransport transport)
+  finally (action (mvar, node)) (closeTransport transport)
 ```
 
 The second step in bridging these worlds is defining a function that'll listen for messages that are sent to a process and put them in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
