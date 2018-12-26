@@ -161,11 +161,10 @@ withApp :: (MVar a -> LocalNode -> Process ())
 withApp app action = do
   mvar              <- newEmptyMVar
   (node, transport) <- run $ app mvar
-  _                 <- finally (action (mvar, node)) (closeTransport transport)
-  closeTransport transport
+  finally (action (mvar, node)) (closeTransport transport)
 ```
 
-The second step in bridging these words is defining a function that'll listen for messages that are sent to a process and put them in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
+The second step in bridging these worlds is defining a function that'll listen for messages that are sent to a process and put them in our [`MVar`](http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar).
 
 ``` haskell
 -- | Listens for messages and writes msg to an mvar
@@ -238,6 +237,6 @@ Finally we'll want to test our server process calculates results correctly and s
 
 The approach described in this post reflects some of my background in object-oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing.
 
-There are obviously some shortcomings to the techniques described — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) makes you to take is very consistent and makes it pleasant to write asynchronous applications.
+There are obviously some shortcomings to the techniques described — the big one being that the type checker doesn't complain when you send an unknown message to a process. That said, the approach [`distributed-process`](https://github.com/haskell-distributed/distributed-process) makes you take is very consistent and makes it pleasant to write asynchronous applications.
 
 Hopefully what I've written here offers some insight into how you might begin testing your [`distributed-process`](https://github.com/haskell-distributed/distributed-process) applications.
