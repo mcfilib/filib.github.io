@@ -33,8 +33,21 @@ main = hakyll $ do
     route   idRoute
     compile compressCssCompiler
 
+  let
+    favicon =
+      "favicon.ico"
+
+    images =
+      "images/*"
+
+    resumes =
+      "resume.json" .||. "resume.html"
+
+    staticFiles =
+      favicon .||. images .||. resumes
+
   -- Static files
-  match ("favicon.ico" .||. "images/*") $ do
+  match staticFiles $ do
     route   idRoute
     compile copyFileCompiler
 
@@ -67,13 +80,6 @@ main = hakyll $ do
 
   -- About
   match "about.html" $ do
-    route idRoute
-    compile $ getResourceBody
-      >>= applyAsTemplate defaultContext
-      >>= loadAndApplyTemplate "templates/default.html" defaultContext
-
-  -- CV
-  match "cv.html" $ do
     route idRoute
     compile $ getResourceBody
       >>= applyAsTemplate defaultContext

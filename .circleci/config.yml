@@ -10,6 +10,17 @@ jobs:
       - image: fpco/stack-build:lts-11.11
     steps:
       - checkout
+      - run:
+          name: Build CV
+          command: |
+            sudo apt-get update
+            curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+            nvm install v8.9.4
+            npm install hackmyresume -g
+            npm install jsonresume-theme-stackoverflow
+            hackmyresume build resume.json TO resume.html --theme node_modules/jsonresume-theme-stackoverflow
       - restore_cache:
           keys:
             - stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
@@ -36,12 +47,9 @@ jobs:
           name: Publish
           working_directory: "./_site"
           command: |
-            # init
             git init
             git config user.name  "CircleCI"
             git config user.email "job@circleci.com"
-            # add
             git add .
             git commit -m "publish $CIRCLE_SHA1 [ci skip]"
-            # push
             git push --force https://${GITHUB_ACCESS_TOKEN}@github.com/mcfilib/mcfilib.github.io.git master

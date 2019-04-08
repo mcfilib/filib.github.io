@@ -1,0 +1,208 @@
+{
+    "basics": {
+        "name": "Philip Cunningham",
+        "label": "Software Developer",
+        "email": "hello@filib.io",
+        "website": "https://filib.io",
+        "summary": "Philip is a senior software developer and technical lead working predominantly in web development using Haskell and Ruby.",
+        "location": {
+            "city": "Penarth",
+            "countryCode": "UK",
+            "region": "Vale of Glamorgan"
+        },
+        "profiles": [
+            {
+                "network": "GitHub",
+                "username": "mcfilib",
+                "url": "https://github.com/mcfilib"
+            }
+        ]
+    },
+    "work": [
+        {
+            "company": "Pirate Studios",
+            "position": "Senior Software Developer",
+            "website": "https://www.piratestudios.co.uk",
+            "startDate": "2017-07-01",
+            "summary": "Responsible for developing backend APIs written in Ruby with Grape; recording and streaming applications running on IoT devices in Haskell and monitoring services in Haskell.",
+            "highlights": [
+                "Built and deployed a Haskell application to Raspberry Pis in recording studios."
+            ]
+        },
+        {
+            "company": "IRIS Connect",
+            "position": "Web Application Technical Lead",
+            "website": "https://www.irisconnect.com",
+            "startDate": "2015-10-01",
+            "endDate": "2017-07-01",
+            "summary": "Responsible for developing customer-facing web application written in Ruby with Ruby on Rails, extending it with microservices written in Haskell and PureScript, deployments to Amazon AWS, code reviews and planning weekly sprints.",
+            "highlights": [
+                "Provided path for Ruby web application to be extended with Haskell services with minimal disruption."
+            ]
+        },
+        {
+            "company": "IRIS Connect",
+            "position": "Senior Web Application Developer",
+            "website": "https://www.irisconnect.com",
+            "startDate": "2014-02-01",
+            "endDate": "2015-10-01",
+            "summary": "Responsible for developing a continuing professional development (CPD) web application in Ruby with Ruby on Rails and integrating it with Haskell services, and dealing with deployments to Heroku.",
+            "highlights": [
+                "Delivered web application rewrite on schedule."
+            ]
+        },
+        {
+            "company": "Codeface",
+            "position": "Web Developer",
+            "website": "http://www.codeface.com",
+            "startDate": "2011-08-01",
+            "endDate": "2014-02-01",
+            "summary": "Responsible for developing Ruby on Rails applications, integrating them with Clojure services, and dealing with deployments to Heroku and Amazon EC2."
+        }
+    ],
+    "education": [
+        {
+            "institution": "Well Typed",
+            "area": "Advanced Haskell",
+            "startDate": "2014-10-09",
+            "endDate": "2014-10-10"
+        },
+        {
+            "institution": "University of Sussex",
+            "area": "Intelligent Systems",
+            "studyType": "MSc (merit)",
+            "startDate": "2011-09-01",
+            "endDate": "2013-09-01",
+            "courses": [
+                "Adaptive Systems",
+                "Advanced Sound Synthesis",
+                "Generative Creativity",
+                "Intelligent Systems Techniques",
+                "Language Engineering",
+                "Machine Learning",
+                "Object-Oriented Programming",
+                "Real-World Cognition",
+                "Sound Synthesis"
+            ]
+        },
+        {
+            "institution": "Manchester Digital Laboratories",
+            "area": "Ruby on Rails Bootcamp",
+            "startDate": "2011-08-17",
+            "endDate": "2011-08-19"
+        },
+        {
+            "institution": "University of Strathclyde",
+            "area": "Applied Music",
+            "studyType": "BA (2:1)",
+            "startDate": "2004-09-01",
+            "endDate": "2008-09-01"
+        }
+    ],
+    "publications": [
+        {
+            "name": "Testing distributed-process Apps Using Hspec",
+            "releaseDate": "2018-12-24",
+            "website": "https://filib.io/posts/2018-12-24-testing-distributed-process-apps-with-hspec.html",
+            "summary": "Experience report describing how I tested a distributed-process application."
+        },
+        {
+            "name": "Parse Ruby Objects in Haskell",
+            "releaseDate": "2017-04-24",
+            "website": "https://filib.io/posts/2017-04-24-parse-ruby-objects-in-haskell.html",
+            "summary": "Tutorial describing how to use ruby-marshal."
+        },
+        {
+            "name": "i18n for Haskell Web Applications",
+            "releaseDate": "2015-10-06",
+            "website": "https://skillsmatter.com/skillscasts/8770-i18n-for-haskell-web-applications",
+            "summary": "Conference talk about using the Gettext approach to internationalisation in Haskell."
+        },
+        {
+            "name": "rails-session",
+            "releaseDate": "2017-04-09",
+            "website": "https://github.com/iconnect/rails-session",
+            "summary": "Decrypt Ruby on Rails sessions in Haskell."
+        },
+        {
+            "name": "ruby-marshal",
+            "releaseDate": "2015-05-08",
+            "website": "https://github.com/mcfilib/ruby-marshal",
+            "summary": "Haskell library to parse a subset of Ruby objects serialised with Marshal.dump."
+        },
+        {
+            "name": "ribimaybe",
+            "releaseDate": "2014-06-08",
+            "website": "https://github.com/mcfilib/ribimaybe",
+            "summary": "Ruby library providing principled Maybe functor, applicative and monad."
+        }
+    ],
+    "skills": [
+        {
+            "name": "Languages",
+            "keywords": [
+                "Elixir",
+                "Elm",
+                "Haskell",
+                "JavaScript",
+                "Ruby",
+                "Rust"
+            ]
+        },
+        {
+            "name": "Frameworks",
+            "keywords": [
+                "AngularJS",
+                "Distributed Process",
+                "Rails",
+                "Scotty",
+                "Spock",
+                "The Elm Architecture"
+            ]
+        },
+        {
+            "name": "Operations",
+            "keywords": [
+                "AWS",
+                "Ansible",
+                "Balena",
+                "Docker",
+                "Heroku",
+                "Jenkins"
+            ]
+        },
+        {
+            "name": "Other",
+            "keywords": [
+                "Git",
+                "HSpec",
+                "Linux",
+                "PostgreSQL",
+                "RSpec",
+                "Raspberry Pi"
+            ]
+        }
+    ],
+    "languages": [
+        {
+            "language": "English",
+            "fluency": "Native speaker"
+        }
+    ],
+    "interests": [
+        {
+            "name": "Health and Fitness"
+        },
+        {
+            "name": "Music"
+        },
+        {
+            "name": "Skateboarding"
+        }
+    ],
+    "references": [
+        {
+            "name": "Available on request."
+        }
+    ]
+}
