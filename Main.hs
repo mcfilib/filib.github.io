@@ -41,7 +41,7 @@ main = hakyll $ do
       "images/*"
 
     resumes =
-      "resume.json" .||. "resume.html"
+      "resume.json" .||. "resume.html" .||. "resume.pdf"
 
     staticFiles =
       favicon .||. images .||. resumes
