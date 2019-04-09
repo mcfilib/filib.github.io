@@ -31,9 +31,9 @@ jobs:
 
             nvm install v8.9.4
             npm install hackmyresume -g
-            npm install jsonresume-theme-stackoverflow
+            npm install jsonresume-theme-eloquent
 
-            hackmyresume build resume.json TO resume.html resume.pdf --theme node_modules/jsonresume-theme-stackoverflow
+            hackmyresume build resume.json TO resume.html resume.pdf --theme node_modules/jsonresume-theme-eloquent
       - restore_cache:
           keys:
             - stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
