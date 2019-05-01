@@ -24,7 +24,7 @@
             "position": "Senior Software Developer",
             "website": "https://www.piratestudios.co.uk",
             "startDate": "2017-07-01",
-            "summary": "Responsible for developing backend APIs written in Ruby with Grape; recording and streaming applications running on IoT devices in Haskell and monitoring services in Haskell.",
+            "summary": "Responsible for developing backend APIs written in Ruby with Grape; applications running on IoT devices in Haskell and monitoring services in Haskell.",
             "highlights": [
                 "Built and deployed a Haskell application to Raspberry Pis in recording studios."
             ]
