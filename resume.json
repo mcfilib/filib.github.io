@@ -4,7 +4,7 @@
         "label": "Software Developer",
         "email": "hello@filib.io",
         "website": "https://filib.io",
-        "summary": "Philip is a senior software developer and technical lead working predominantly in web development using Haskell and Ruby.",
+        "summary": "Experienced senior software developer and technical lead working predominantly in web development with an educational background in artifical intelligence and music. ",
         "location": {
             "city": "Penarth",
             "countryCode": "UK",
@@ -24,7 +24,7 @@
             "position": "Senior Software Developer",
             "website": "https://www.piratestudios.co.uk",
             "startDate": "2017-07-01",
-            "summary": "Responsible for developing backend APIs written in Ruby with Grape; applications running on IoT devices in Haskell and monitoring services in Haskell.",
+            "summary": "Responsible for developing backend APIs written in Ruby and applications running on IoT devices in Haskell.",
             "highlights": [
                 "Built and deployed a Haskell application to Raspberry Pis."
             ]
