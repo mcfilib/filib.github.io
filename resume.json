@@ -35,7 +35,7 @@
       "website": "https://www.irisconnect.com",
       "startDate": "2015-10-01",
       "endDate": "2017-07-01",
-      "summary": "At IRIS Connect I lead development of a continuing professional development platform that allowed teachers to reflect and develop their practice using video. My primary role was leading development of a customer-facing Ruby on Rails application and integrating it with JSON API written in Haskell.",
+      "summary": "At IRIS Connect I lead development of a continuing professional development platform that allowed teachers to reflect and develop their practice using video. My primary role was leading development of a customer-facing Ruby on Rails application and integrating it with a JSON API written in Haskell.",
       "highlights": [
         "Provided path for Ruby web application to be extended with Haskell services with minimal disruption."
       ]
