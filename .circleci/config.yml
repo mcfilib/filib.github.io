@@ -31,7 +31,7 @@ jobs:
 
             nvm install v8.9.4
             npm install hackmyresume -g
-            npm install jsonresume-theme-eloquent
+            npm install https://github.com/mcfilib/jsonresume-theme-eloquent.git
 
             hackmyresume build resume.json TO resume.html resume.pdf --theme node_modules/jsonresume-theme-eloquent
       - restore_cache:
