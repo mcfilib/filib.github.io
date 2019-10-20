@@ -1,10 +1,10 @@
 {
   "basics": {
     "name": "Philip Cunningham",
-    "label": "Software Developer",
+    "label": "Senior Software Developer",
     "email": "hello@filib.io",
     "website": "https://filib.io",
-    "summary": "Accomplished senior software developer and technical lead with over nine years experience developing applications for the web. Extensive experience of all levels of the application development lifecycle, from requirements gathering and design through to writing, testing and deploying code. Strong commitment to building effective teams through openness, transparency, mentorship and collaboration.",
+    "summary": "Highly experienced, motivated and strategic senior software developer and technical lead with a Masters in Intelligent Systems followed by nearly 10 years experience leading effective teams and developing web-based applications. Accomplished in Haskell and Ruby whilst also holding expertise in a range of languages, frameworks and operations across all levels of the development lifecycle. Professional commitment to learning and development, openness and transparency, mentorship and collaboration to deliver excellence for clients.",
     "location": {
       "city": "Penarth",
       "countryCode": "UK",
@@ -24,7 +24,7 @@
       "position": "Senior Software Developer",
       "website": "https://www.piratestudios.co.uk",
       "startDate": "2017-07-01",
-      "summary": "At Pirate Studios I contribute to the development of software that powers the world's largest network of fully automated, self-service, music studios. My primary role is leading development on backend services that power our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I'm also involved in full stack development of our customer-facing Ruby on Rails application.",
+      "summary": "At Pirate Studios I contribute to the development of software that powers the world's largest network of fully automated, self-service, music studios. My primary role is leading development on backend services that power our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I'm also actively involved in full stack development of our customer-facing Ruby on Rails application.",
       "highlights": [
         "Built and deployed a Haskell application to Raspberry Pis."
       ]
