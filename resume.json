@@ -139,6 +139,17 @@
   ],
   "skills": [
     {
+      "name": "Soft Skills",
+      "keywords": [
+        "Accountability",
+        "Communcation",
+        "Empathy",
+        "Perseverance",
+        "Problem Solving",
+        "Teamwork"
+      ]
+    },
+    {
       "name": "Languages",
       "keywords": [
         "Elixir",
