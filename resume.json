@@ -27,7 +27,7 @@
       "summary": "At Pirate Studios I develop the software that powers the world's largest network of fully automated, self-service, music studios. My primary role is leading development on backend services that power our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I'm also actively involved in full stack development of our customer-facing Ruby on Rails application."
     },
     {
-      "company": "Reliable Code",
+      "company": "Self Employed",
       "position": "Senior Software Development Consultant",
       "startDate": "2017-07-01",
       "summary": "Around my full-time work I also provide occasional expert consultancy and support to clients that includes internationalisation and localisation strategy and implementation; integration with third-party APIs e.g. Twilio voice, Canvas LMS and Podio APIs; and upgrading legacy applications."
@@ -38,7 +38,7 @@
       "website": "https://www.irisconnect.com",
       "startDate": "2015-10-01",
       "endDate": "2017-07-01",
-      "summary": "At IRIS Connect I worked in a small team to develop a continuing professional development platform that allowed teachers to reflect and develop their practice using video. My primary role was leading development of a customer-facing Ruby on Rails application and integrating it with a JSON API written in Haskell."
+      "summary": "At IRIS Connect I was promoted to provide technical leadership for an international software development team to deliver a unique and innovative online platform for teachers and other corporate clients providing continuing professional development and reflective practice opportunities for high-performing for professionals."
     },
     {
       "company": "IRIS Connect",
@@ -46,7 +46,7 @@
       "website": "https://www.irisconnect.com",
       "startDate": "2014-02-01",
       "endDate": "2015-10-01",
-      "summary": "My primary role was developing a customer-facing Ruby on Rails application and integrating it with a JSON API written in Haskell.",
+      "summary": "At IRIS Connect my primary role was developing a customer-facing Ruby on Rails application and integrating it with a JSON API written in Haskell. I was instrumental in the successful, ahead of schedule, rewrite of an existing existing web application and provided the company with a solid foundation in order to develop new and innovative features.",
     },
     {
       "company": "Codeface",
@@ -55,6 +55,13 @@
       "startDate": "2010-08-01",
       "endDate": "2014-02-01",
       "summary": "At Codeface I worked in a small specialist team at a newly-established start-up company focussed on building web applications for a wide range of different clients using Ruby, PHP and JavaScript."
+    },
+    {
+      "company": "Self Employed",
+      "position": "Musician",
+      "startDate": "2008-09-01",
+      "endDate": "2010-08-01",
+      "summary": "After graduating in Applied Music from the University of Strathclyde, I worked as a musician and composer and toured the UK and USA, whilst also teaching myself how to program audio synthesis and generative composition, visual art and interactive installations using Arduino, Processing and Pure Data."
     }
   ],
   "education": [
@@ -67,7 +74,7 @@
     {
       "institution": "University of Sussex",
       "area": "Intelligent Systems",
-      "studyType": "MSc (merit)",
+      "studyType": "MSc",
       "startDate": "2011-09-01",
       "endDate": "2013-09-01",
       "courses": [
@@ -91,7 +98,7 @@
     {
       "institution": "University of Strathclyde",
       "area": "Applied Music",
-      "studyType": "BA (2:1)",
+      "studyType": "BA",
       "startDate": "2004-09-01",
       "endDate": "2008-09-01"
     }
@@ -140,7 +147,7 @@
       "keywords": [
         "Accountability",
         "Communcation",
-        "Empathy",
+        "Leadership",
         "Perseverance",
         "Problem Solving",
         "Teamwork"
