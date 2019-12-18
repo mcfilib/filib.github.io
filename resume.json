@@ -20,17 +20,25 @@
   },
   "work": [
     {
+      "company": "Self Employed",
+      "position": "Senior Software Development Consultant",
+      "startDate": "2019-12-18",
+      "summary": "I currently provide expert consultancy to clients working in educational technology."
+    },
+    {
       "company": "Pirate Studios",
       "position": "Senior Software Developer",
       "website": "https://www.piratestudios.co.uk",
       "startDate": "2017-07-01",
-      "summary": "At Pirate Studios I develop the software that powers the world's largest network of fully automated, self-service, music studios. My primary role is leading development on backend services that power our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I'm also actively involved in full stack development of our customer-facing Ruby on Rails application."
+      "endDate": "2019-12-17",
+      "summary": "At Pirate Studios I developed the software that powers the world's largest network of fully automated, self-service, music studios. My primary role was leading development on backend services that powered our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I was also actively involved in full stack development of our customer-facing Ruby on Rails application."
     },
     {
       "company": "Self Employed",
       "position": "Senior Software Development Consultant",
       "startDate": "2017-07-01",
-      "summary": "Around my full-time work I also provide occasional expert consultancy and support to clients that includes internationalisation and localisation strategy and implementation, integration with third-party APIs (e.g. Twilio voice, Canvas LMS and Podio), and upgrading legacy applications."
+      "endDate": "2019-12-17",
+      "summary": "Around my full-time work I also provided occasional expert consultancy and support to clients that included internationalisation and localisation strategy and implementation, integration with third-party APIs (e.g. Twilio voice, Canvas LMS and Podio), and upgrading legacy applications."
     },
     {
       "company": "IRIS Connect",
