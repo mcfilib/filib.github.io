@@ -146,7 +146,7 @@ htmlTags key tags = field key $ \item -> do
 feedConfig :: FeedConfiguration
 feedConfig = FeedConfiguration
     { feedTitle       = "Philip Cunningham: music, code and stuff."
-    , feedDescription = "Philip is a Ruby and Haskell developer currently working remotely from Penarth."
+    , feedDescription = "Philip is a Ruby and Haskell developer currently working remotely from Melbourne."
     , feedAuthorName  = "Philip Cunningham"
     , feedAuthorEmail = "hello@filib.io"
     , feedRoot        = "https://filib.io"
