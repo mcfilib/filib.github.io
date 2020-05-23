@@ -48,8 +48,8 @@ jobs:
           command: stack setup
       - run:
           name: Dependencies
-          command: stack build -j2 --dependencies-only
-          no_output_timeout: 5h
+          command: stack build -j1 --dependencies-only --fast
+          no_output_timeout: 2h
       - save_cache:
           key: stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
           paths:
