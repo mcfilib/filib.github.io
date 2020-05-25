@@ -7,7 +7,7 @@ jobs:
       only:
         - develop
     docker:
-      - image: fpco/stack-build:lts-15.13
+      - image: fpco/stack-build:lts-12.26
     steps:
       - checkout
       - run:
