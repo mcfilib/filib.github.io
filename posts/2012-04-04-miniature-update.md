@@ -4,11 +4,11 @@ author: Philip Cunningham
 tags: self
 ---
 
-The last year has been crazy. Over the last nine months I started and new job at
+The last couple of years have been crazy. I started and new job at
 [Codeface](http://www.codeface.com/), attended a Ruby on Rails
 [bootcamp](http://ricroberts.com/articles/ruby-on-rails-bootcamp-at-manchester-madlab)
-in Manchester, and began studying for an MSc in
-[Intelligent Systems](http://www.sussex.ac.uk/informatics/).
+in Manchester, and began studying for an MSc in [Intelligent
+Systems](http://www.sussex.ac.uk/informatics/).
 
 I've studied, used, and learned an incredible amount in this period:
 [Ruby on Rails](http://rubyonrails.org/), [Linux](http://xubuntu.org/), machine
