@@ -18,7 +18,7 @@ learning, natural language processing,
 never thought I'd love, or would have been given an opportunity to study again,
 in the form of statistics and discovered, the hard way, that I profusely dislike
 taking buses on University routes. Even more life-changing, finally made a
-permanent switch from Ableton Live to Renoise
+permanent switch from Ableton Live to Renoise.
 
 That said, having been completely absorbed in these largely technical and
 intellectual pursuits, I've let other areas of my life slide and haven't really
