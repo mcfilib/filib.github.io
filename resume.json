@@ -12,17 +12,23 @@
     },
     "profiles": [
       {
+        "network": "GitLab",
+        "username": "philipcunningham",
+        "url": "https://gitlab.com/philipcunningham"
+      },
+      {
         "network": "GitHub",
         "username": "mcfilib",
         "url": "https://github.com/mcfilib"
-      }
+      },      
     ]
   },
   "work": [
     {
       "company": "GitLab",
       "position": "Senior Backend Engineer, Secure",
-      "startDate": "2020-04-06"
+      "startDate": "2020-04-06",
+      "summary": "At GitLab I work on the open source version of GitLab, the enterprise editions, and the GitLab.com service as well."      
     },
     {
       "company": "Self Employed",
