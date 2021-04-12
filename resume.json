@@ -1,0 +1,243 @@
+{
+  "basics": {
+    "name": "Philip Cunningham",
+    "label": "Senior Software Developer",
+    "email": "hello@filib.io",
+    "website": "https://filib.io",
+    "summary": "Highly experienced, motivated and strategic senior software developer and technical lead with a Masters in Intelligent Systems followed by nearly 10 years experience leading effective teams and developing web-based applications. Accomplished in Haskell and Ruby whilst also holding expertise in a range of languages, frameworks and operations across all levels of the development lifecycle. Professional commitment to learning and development, openness and transparency, mentorship and collaboration to deliver excellence for clients.",
+    "location": {
+      "city": "Melbourne",
+      "countryCode": "AU",
+      "region": "Victoria"
+    },
+    "profiles": [
+      {
+        "network": "GitLab",
+        "username": "philipcunningham",
+        "url": "https://gitlab.com/philipcunningham"
+      },
+      {
+        "network": "GitHub",
+        "username": "mcfilib",
+        "url": "https://github.com/mcfilib"
+      }
+    ]
+  },
+  "work": [
+    {
+      "company": "GitLab",
+      "position": "Senior Backend Engineer, Secure",
+      "startDate": "2020-04-06",
+      "summary": "At GitLab I work on the open source version of GitLab, the enterprise editions, and the GitLab.com service as well."      
+    },
+    {
+      "company": "Self Employed",
+      "position": "Senior Software Development Consultant",
+      "startDate": "2019-12-18",
+      "endDate": "2020-04-03",
+      "summary": "I provided expert consultancy to clients working in educational technology."
+    },
+    {
+      "company": "Pirate Studios",
+      "position": "Senior Software Developer",
+      "website": "https://www.piratestudios.co.uk",
+      "startDate": "2017-07-01",
+      "endDate": "2019-12-17",
+      "summary": "At Pirate Studios I developed the software that powers the world's largest network of fully automated, self-service, music studios. My primary role was leading development on backend services that powered our Facebook Live streaming and recording project, which includes a JSON API written in Ruby and a Haskell application running on Raspberry Pis in our music studios. Alongside this I was also actively involved in full stack development of our customer-facing Ruby on Rails application."
+    },
+    {
+      "company": "Self Employed",
+      "position": "Senior Software Development Consultant",
+      "startDate": "2017-07-01",
+      "endDate": "2019-12-17",
+      "summary": "Around my full-time work I also provided occasional expert consultancy and support to clients that included internationalisation and localisation strategy and implementation, integration with third-party APIs (e.g. Twilio voice, Canvas LMS and Podio), and upgrading legacy applications."
+    },
+    {
+      "company": "IRIS Connect",
+      "position": "Web Application Technical Lead",
+      "website": "https://www.irisconnect.com",
+      "startDate": "2015-10-01",
+      "endDate": "2017-07-01",
+      "summary": "At IRIS Connect I was promoted to provide technical leadership for an international software development team to deliver a unique and innovative online platform for teachers and other corporate clients providing continuing professional development and reflective practice opportunities for high-performing professionals."
+    },
+    {
+      "company": "IRIS Connect",
+      "position": "Senior Web Application Developer",
+      "website": "https://www.irisconnect.com",
+      "startDate": "2014-02-01",
+      "endDate": "2015-10-01",
+      "summary": "At IRIS Connect my primary role was developing a customer-facing Ruby on Rails application and integrating it with a JSON API written in Haskell. I was instrumental in the successful, ahead of schedule, rewrite of an existing web application and provided the company with a solid foundation in order to develop new and innovative features."
+    },
+    {
+      "company": "Codeface",
+      "position": "Web Developer",
+      "website": "http://www.codeface.com",
+      "startDate": "2010-08-01",
+      "endDate": "2014-02-01",
+      "summary": "At Codeface I worked in a small specialist team at a newly-established start-up company focussed on building web applications for a wide range of different clients using Ruby, PHP and JavaScript."
+    },
+    {
+      "company": "Self Employed",
+      "position": "Musician",
+      "startDate": "2008-09-01",
+      "endDate": "2010-08-01",
+      "summary": "After graduating in Applied Music from the University of Strathclyde, I worked as a musician and composer and toured the UK and USA, whilst also teaching myself how to program audio synthesis and generative composition, visual art and interactive installations using Arduino, Processing and Pure Data."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Well Typed",
+      "area": "Advanced Haskell",
+      "startDate": "2014-10-09",
+      "endDate": "2014-10-10"
+    },
+    {
+      "institution": "University of Sussex",
+      "area": "Intelligent Systems",
+      "studyType": "MSc",
+      "startDate": "2011-09-01",
+      "endDate": "2013-09-01",
+      "courses": [
+        "Adaptive Systems",
+        "Advanced Sound Synthesis",
+        "Generative Creativity",
+        "Intelligent Systems Techniques",
+        "Language Engineering",
+        "Machine Learning",
+        "Object-Oriented Programming",
+        "Real-World Cognition",
+        "Sound Synthesis"
+      ]
+    },
+    {
+      "institution": "Manchester Digital Laboratories",
+      "area": "Ruby on Rails Bootcamp",
+      "startDate": "2011-08-17",
+      "endDate": "2011-08-19"
+    },
+    {
+      "institution": "University of Strathclyde",
+      "area": "Applied Music",
+      "studyType": "BA",
+      "startDate": "2004-09-01",
+      "endDate": "2008-09-01"
+    }
+  ],
+  "publications": [
+    {
+      "name": "Testing distributed-process Apps Using Hspec",
+      "releaseDate": "2018-12-24",
+      "website": "https://filib.io/posts/2018-12-24-testing-distributed-process-apps-with-hspec.html",
+      "summary": "Experience report describing how I tested a distributed-process application."
+    },
+    {
+      "name": "Parse Ruby Objects in Haskell",
+      "releaseDate": "2017-04-24",
+      "website": "https://filib.io/posts/2017-04-24-parse-ruby-objects-in-haskell.html",
+      "summary": "Tutorial describing how to use ruby-marshal."
+    },
+    {
+      "name": "i18n for Haskell Web Applications",
+      "releaseDate": "2015-10-06",
+      "website": "https://skillsmatter.com/skillscasts/8770-i18n-for-haskell-web-applications",
+      "summary": "Conference talk about using the Gettext approach to internationalisation in Haskell."
+    },
+    {
+      "name": "rails-session",
+      "releaseDate": "2017-04-09",
+      "website": "https://github.com/iconnect/rails-session",
+      "summary": "Decrypt Ruby on Rails sessions in Haskell."
+    },
+    {
+      "name": "ruby-marshal",
+      "releaseDate": "2015-05-08",
+      "website": "https://github.com/mcfilib/ruby-marshal",
+      "summary": "Haskell library to parse a subset of Ruby objects serialised with Marshal.dump."
+    },
+    {
+      "name": "ribimaybe",
+      "releaseDate": "2014-06-08",
+      "website": "https://github.com/mcfilib/ribimaybe",
+      "summary": "Ruby library providing principled Maybe functor, applicative and monad."
+    }
+  ],
+  "skills": [
+    {
+      "name": "Soft Skills",
+      "keywords": [
+        "Accountability",
+        "Communication",
+        "Leadership",
+        "Perseverance",
+        "Problem Solving",
+        "Teamwork"
+      ]
+    },
+    {
+      "name": "Languages",
+      "keywords": [
+        "Elixir",
+        "Elm",
+        "Haskell",
+        "JavaScript",
+        "Ruby",
+        "Rust"
+      ]
+    },
+    {
+      "name": "Frameworks",
+      "keywords": [
+        "AngularJS",
+        "Distributed Process",
+        "Express",
+        "Rails",
+        "React",
+        "Spock"
+      ]
+    },
+    {
+      "name": "Operations",
+      "keywords": [
+        "AWS",
+        "Ansible",
+        "Balena",
+        "Docker",
+        "Heroku",
+        "Jenkins"
+      ]
+    },
+    {
+      "name": "Other",
+      "keywords": [
+        "Git",
+        "HSpec",
+        "Linux",
+        "PostgreSQL",
+        "RSpec",
+        "Test Driven Development"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native speaker"
+    }
+  ],
+  "interests": [
+    {
+      "name": "Health and Fitness"
+    },
+    {
+      "name": "Music"
+    },
+    {
+      "name": "Skateboarding"
+    }
+  ],
+  "references": [
+    {
+      "name": "Available on request."
+    }
+  ]
+}

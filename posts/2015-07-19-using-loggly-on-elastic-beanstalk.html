@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Philip is a Ruby and Haskell developer currently working remotely from Melbourne.">
+    <title>
+      Philip Cunningham -
+      
+      Using Loggly On Elastic Beanstalk
+      
+    </title>
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/filib.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="column one-third">
+          <nav class="masthead">
+            <ul>
+              <li>
+                <a href="../">
+                  Home
+                </a>
+              </li>
+              </li>
+              <li>
+                <a href="../about.html">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="../rss.xml">
+                  RSS
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div>
+  <h1>
+    Using Loggly On Elastic Beanstalk
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2015-07-19
+      </h2>
+      <p>
+        <a href="../tags/ops.html" class="post-category green">ops</a>
+      </p>
+    </header>
+
+    <div>
+      <p>This week I had to configure a Rails app running on Elastic Beanstalk to use Loggly. Since I don’t want anyone to suffer the Elastic Beanstalk documentation more than is necessary, I’ve written this short tutorial should you find yourself tasked with the same challenge. It assumes you already have a Rails app running on Elastic Beanstalk and a general understanding of Rails apps.</p>
+<h2 id="configure-app">Configure App</h2>
+<p>Add the <a href="https://github.com/crohr/syslogger">syslogger</a> gem to your Gemfile.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># Gemfile</span></a>
+<a class="sourceLine" id="cb1-2" title="2">gem <span class="st">'syslogger'</span>, <span class="st">'~&gt; 1.6.0'</span></a></code></pre></div>
+<p>In <code>config/environments/production.rb</code> configure your app to use <code>Syslogger</code> for logging. Replace <code>&quot;your-app-name&quot;</code> with, you guessed it, the name of your application. This allows you to easily see logs from your app in the Loggly web interface using <a href="https://www.loggly.com/docs/source-groups/">source groups</a>, which is especially useful if you’re using Loggly to aggregate logs from multiple apps.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1"><span class="co"># config/environments/production.rb</span></a>
+<a class="sourceLine" id="cb2-2" title="2">config.logger = <span class="dt">Syslogger</span>.new(<span class="st">&quot;your-app-name&quot;</span>, <span class="dt">Syslog</span>::<span class="dt">LOG_PID</span>, <span class="dt">Syslog</span>::<span class="dt">LOG_LOCAL7</span>)</a></code></pre></div>
+<h2 id="create-loggly-account">Create Loggly Account</h2>
+<p>Go <a href="https://www.loggly.com/signup/">sign up</a> for a <a href="https://www.loggly.com/">Loggly</a> account and <a href="https://www.loggly.com/docs/customer-token-authentication-token/">create a customer token</a>.</p>
+<h2 id="configure-container-environment">Configure Container Environment</h2>
+<p>Go to the Amazon AWS Console and add your Loggly account name and customer token to your Elastic Beanstalk app’s environment using the <code>LOGGLY_ACCOUNT</code> and <code>LOGGLY_AUTH</code> property names.</p>
+<h2 id="customise-container">Customise Container</h2>
+<p>Add the following configuration to <code>loggly.config</code> in the <code>.ebextensions</code> directory in the root of your app.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># .ebextensions/loggly.config</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="fu">files:</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="fu">&quot;/tmp/loggly_config.sh&quot;:</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="fu">mode:</span><span class="at"> </span><span class="st">&quot;000755&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="fu">owner:</span><span class="at"> root</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="fu">group:</span><span class="at"> root</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="fu">    content:</span> <span class="st">|</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      #!/bin/bash</a>
+<a class="sourceLine" id="cb3-9" title="9">      su --command=&quot;python /tmp/configure-syslog.py setup --auth $LOGGLY_AUTH --account $LOGGLY_ACCOUNT --yes&quot;</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="fu">container_commands:</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="fu">01_loggly_dl:</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="fu">command:</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      wget -q -O /tmp/configure-syslog.py https://www.loggly.com/install/configure-syslog.py</a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="fu">02_loggly_config:</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="fu">command:</span><span class="at"> /tmp/loggly_config.sh</span></a></code></pre></div>
+<p>This YAML file downloads Loggly’s own syslog configuration script and sets up your container to send your system logs to Loggly. You can audit this script at <a href="https://github.com/loggly/install-script/blob/master/configure-syslog.py">loggly/install-script</a>.</p>
+<h2 id="wrap-up">Wrap Up</h2>
+<p>Re-deploy your app to Elastic Beanstalk and watch as your logs begin appearing in Loggly.</p>
+    </div>
+  </section>
+</div>
+
+      </div>
+    </div>
+  </body>
+</html>

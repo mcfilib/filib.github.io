@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Philip is a Ruby and Haskell developer currently working remotely from Melbourne.">
+    <title>
+      Philip Cunningham -
+      
+      Parse Ruby Objects in Haskell
+      
+    </title>
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/filib.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="column one-third">
+          <nav class="masthead">
+            <ul>
+              <li>
+                <a href="../">
+                  Home
+                </a>
+              </li>
+              </li>
+              <li>
+                <a href="../about.html">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="../rss.xml">
+                  RSS
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div>
+  <h1>
+    Parse Ruby Objects in Haskell
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2017-04-24
+      </h2>
+      <p>
+        <a href="../tags/haskell.html" class="post-category green">haskell</a> <a href="../tags/ruby.html" class="post-category green">ruby</a>
+      </p>
+    </header>
+
+    <div>
+      <p>In 2015 I released my first Haskell project <a href="https://www.reddit.com/r/haskell/comments/3enysr/my_first_haskell_project_a_ruby_marshal_parser/">ruby-marshal</a>. It’s a package that uses the <a href="https://hackage.haskell.org/package/binary">binary</a> package to parse Ruby objects serialised with <a href="https://ruby-doc.org/core-2.2.2/Marshal.html#method-c-dump">Marshal.dump</a>. I wrote it in my spare time because I was curious to know whether I could devise a strategy to incrementally migrate legacy Ruby on Rails applications over to Haskell without the risk associated with a full rewrite.</p>
+<p>My hypothesis was that if I could decrypt and de-serialise Rails sessions then I’d be able to piggyback on the Rails application’s authentication mechanism. Not long after, I had the opportunity to use this package at work, and put this theory to the test, by writing a Haskell web application that shared sessions with Rails.</p>
+<p>It has been running in production – without any issue – for almost two years.</p>
+<h2 id="marshal">Marshal</h2>
+<p>Ruby’s <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> library serialises Ruby objects to a bytestring e.g. dumping <code>true</code> results in <code>[4, 8, 84]</code> where <code>4</code> and <code>8</code> are the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> version number and <code>true</code> is represented as <code>84</code> or ASCII <code>T</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1">% irb</a>
+<a class="sourceLine" id="cb1-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="dt">Marshal</span>.dump(<span class="dv">true</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">=&gt; <span class="st">&quot;\x04\bT&quot;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; x.bytes</a>
+<a class="sourceLine" id="cb1-5" title="5">=&gt; [<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">84</span>]</a></code></pre></div>
+<p>Compound objects, e.g. hash maps, can also be serialised using <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a>. This might explain why it was used as the default cookie serialiser in Rails until version 4.1, after which <a href="https://github.com/rails/rails/issues/12881">JSON serialisation became the default</a>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">% irb</a>
+<a class="sourceLine" id="cb2-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="dt">Marshal</span>.dump(<span class="st">&quot;session_id&quot;</span> =&gt; <span class="st">&quot;ba0844151d&quot;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3">=&gt; <span class="st">&quot;\x04\b{\x06I\&quot;\x0Fsession_id\x06:\x06ETI\&quot;\x0Fba0844151d\x06;\x00T&quot;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; x.bytes</a>
+<a class="sourceLine" id="cb2-5" title="5">=&gt; [<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">123</span>, <span class="dv">6</span>, <span class="dv">73</span>, <span class="dv">34</span>, <span class="dv">15</span>, <span class="dv">115</span>, <span class="dv">101</span>, <span class="dv">115</span>, <span class="dv">115</span>, <span class="dv">105</span>, <span class="dv">111</span>, <span class="dv">110</span>, <span class="dv">95</span>, <span class="dv">105</span>, <span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">58</span>, <span class="dv">6</span>, <span class="dv">69</span>, <span class="dv">84</span>, <span class="dv">73</span>, <span class="dv">34</span>, <span class="dv">15</span>, <span class="dv">98</span>, <span class="dv">97</span>, <span class="dv">48</span>, <span class="dv">56</span>, <span class="dv">52</span>, <span class="dv">52</span>, <span class="dv">49</span>, <span class="dv">53</span>, <span class="dv">49</span>, <span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">59</span>, <span class="dv">0</span>, <span class="dv">84</span>]</a></code></pre></div>
+<p>More information about the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a> binary format can be found in a series of blog posts by <a href="http://jakegoulding.com/blog/2013/01/15/a-little-dip-into-rubys-marshal-format/">@jakegoulding</a> or by <a href="https://github.com/filib/ruby-marshal/blob/master/src/Data/Ruby/Marshal/Get.hs">reviewing the ruby-marshal source code</a>.</p>
+<h2 id="design">Design</h2>
+<p>The <a href="https://hackage.haskell.org/package/ruby-marshal">ruby-marshal</a> package allows us to transform this binary format into Haskell values and follows a pattern you’ll see elsewhere in the Haskell ecosystem. It consists of:</p>
+<ul>
+<li>An abstract syntax tree (<a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a>) that represents Ruby objects.</li>
+<li>A collection of <a href="https://en.wikipedia.org/wiki/Parser_combinator">parser combinators</a> to transform the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> binary representation into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a>.</li>
+<li>A custom <a href="https://wiki.haskell.org/Monad">monad</a> to enrich the underlying <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/binary-0.8.3.0/Data-Binary-Get.html#t:Get">Get monad</a> with additional effects.</li>
+</ul>
+<h3 id="ast">AST</h3>
+<p>The <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">Ruby AST</a> represents a subset of values that can be encoded by <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">data</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="co">-- Simple objects.</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="fu">=</span> <span class="dt">RNil</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="fu">|</span> <span class="dt">RBool</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="fu">|</span> <span class="dt">RFixnum</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="fu">|</span> <span class="dt">RFloat</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="fu">|</span> <span class="dt">RString</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="fu">|</span> <span class="dt">RSymbol</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="co">-- Compound objects.</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="fu">|</span> <span class="dt">RArray</span> (<span class="dt">Vector</span> <span class="dt">RubyObject</span>)</a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="fu">|</span> <span class="dt">RHash</span> (<span class="dt">Vector</span> (<span class="dt">RubyObject</span>, <span class="dt">RubyObject</span>))</a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="fu">|</span> <span class="dt">RIVar</span> (<span class="dt">RubyObject</span>, <span class="dt">RubyStringEncoding</span>)</a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="co">-- Tag for unsupported objects e.g. Bignum.</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="fu">|</span> <span class="dt">Unsupported</span></a></code></pre></div>
+<p>This is a common pattern you’ll see in other packages e.g. <a href="https://hackage.haskell.org/package/msgpack-1.0.0/docs/Data-MessagePack-Object.html#t:Object">msgpack:Object</a> and <a href="https://hackage.haskell.org/package/aeson-1.2.0.0/docs/Data-Aeson.html#t:Value">aeson:Value</a>.</p>
+<h3 id="parsers-combinators">Parsers Combinators</h3>
+<p><a href="https://en.wikipedia.org/wiki/Parser_combinator">Parsers</a> are combined to build an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> e.g. parsing a raw bytestring is defined as follows.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="ot">getString ::</span> <span class="dt">Marshal</span> <span class="dt">BS.ByteString</span></a>
+<a class="sourceLine" id="cb4-2" title="2">getString <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="co">-- Label a parser to ensure label will be appended if the parse fails.</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  marshalLabel <span class="st">&quot;RawString&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="co">-- Get the number of bytes in the bytestring.</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    n <span class="ot">&lt;-</span> getFixnum</a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="co">-- Get the number of bytes in the bytestring and lift it into the Marshal monad.</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    liftMarshal <span class="fu">$</span> getBytes n</a></code></pre></div>
+<p>It is then used by other parsing functions e.g. parsing a <a href="https://ruby-doc.org/core-2.2.2/Symbol.html">Ruby symbol</a>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="ot">getSymbol ::</span> <span class="dt">Marshal</span> <span class="dt">BS.ByteString</span></a>
+<a class="sourceLine" id="cb5-2" title="2">getSymbol <span class="fu">=</span> marshalLabel <span class="st">&quot;Symbol&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="co">-- Get bytestring.</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  x <span class="ot">&lt;-</span> getString</a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="co">-- Write symbol into the symbol cache.</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  writeCache <span class="fu">$</span> <span class="dt">RSymbol</span> x</a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="co">-- Return the bytestring.</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="fu">return</span> x</a></code></pre></div>
+<p>Before being used in the top level parsing function that combines parsing functions and lifts values in to the <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">Ruby AST</a>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">getRubyObject ::</span> <span class="dt">Marshal</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb6-2" title="2">getRubyObject <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="co">-- Make sure we're using a supported Marshal version, throw away the result and recursively parse our bytestring.</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  getMarshalVersion <span class="fu">&gt;&gt;</span> go</a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="ot">    go ::</span> <span class="dt">Marshal</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    go <span class="fu">=</span> liftMarshal getWord8 <span class="fu">&gt;&gt;=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb6-8" title="8">           <span class="dt">NilChar</span>        <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">RNil</span></a>
+<a class="sourceLine" id="cb6-9" title="9">           <span class="dt">TrueChar</span>       <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">RBool</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-10" title="10">           <span class="dt">FalseChar</span>      <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">RBool</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-11" title="11">           <span class="dt">FixnumChar</span>     <span class="ot">-&gt;</span> <span class="dt">RFixnum</span> <span class="fu">&lt;$&gt;</span> getFixnum</a>
+<a class="sourceLine" id="cb6-12" title="12">           <span class="dt">FloatChar</span>      <span class="ot">-&gt;</span> <span class="dt">RFloat</span> <span class="fu">&lt;$&gt;</span> getFloat</a>
+<a class="sourceLine" id="cb6-13" title="13">           <span class="dt">StringChar</span>     <span class="ot">-&gt;</span> <span class="dt">RString</span> <span class="fu">&lt;$&gt;</span> getString</a>
+<a class="sourceLine" id="cb6-14" title="14">           <span class="dt">SymbolChar</span>     <span class="ot">-&gt;</span> <span class="dt">RSymbol</span> <span class="fu">&lt;$&gt;</span> getSymbol</a>
+<a class="sourceLine" id="cb6-15" title="15">           <span class="dt">ObjectLinkChar</span> <span class="ot">-&gt;</span> <span class="dt">RIVar</span> <span class="fu">&lt;$&gt;</span> getObjectLink</a>
+<a class="sourceLine" id="cb6-16" title="16">           <span class="dt">SymlinkChar</span>    <span class="ot">-&gt;</span> <span class="dt">RSymbol</span> <span class="fu">&lt;$&gt;</span> getSymlink</a>
+<a class="sourceLine" id="cb6-17" title="17">           <span class="dt">ArrayChar</span>      <span class="ot">-&gt;</span> <span class="dt">RArray</span> <span class="fu">&lt;$&gt;</span> getArray go</a>
+<a class="sourceLine" id="cb6-18" title="18">           <span class="dt">HashChar</span>       <span class="ot">-&gt;</span> <span class="dt">RHash</span> <span class="fu">&lt;$&gt;</span> getHash go go</a>
+<a class="sourceLine" id="cb6-19" title="19">           <span class="dt">IVarChar</span>       <span class="ot">-&gt;</span> <span class="dt">RIVar</span> <span class="fu">&lt;$&gt;</span> getIVar go</a>
+<a class="sourceLine" id="cb6-20" title="20">           _              <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">Unsupported</span></a></code></pre></div>
+<h3 id="marshal-monad">Marshal Monad</h3>
+<p>A quirk of the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> format is that it saves space by encoding repeated objects as indexes into a symbol cache and an object cache. We use <code>StateT</code> to keep track of these during de-serialisation and enrich the underlying <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/binary-0.8.3.0/Data-Binary-Get.html#t:Get">Get monad</a> by creating a custom <a href="https://wiki.haskell.org/Monad">monad</a>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">newtype</span> <span class="dt">Marshal</span> a <span class="fu">=</span> <span class="dt">Marshal</span> {<span class="ot"> runMarshal ::</span> <span class="dt">StateT</span> <span class="dt">Cache</span> <span class="dt">Get</span> a }</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadState</span> <span class="dt">Cache</span>)</a></code></pre></div>
+<p>This allows us to write to and read from our cache during parsing without having to manually thread state through our parsing functions.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="file-io">File IO</h3>
+<p>Let’s take a simple example of a Ruby string, serialise it and dump it to the file system using <code>irb</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb8-1" title="1">% irb</a>
+<a class="sourceLine" id="cb8-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="st">&quot;hello haskell&quot;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">=&gt; <span class="st">&quot;hello haskell&quot;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; y = <span class="dt">Marshal</span>.dump(x)</a>
+<a class="sourceLine" id="cb8-5" title="5">=&gt; <span class="st">&quot;\x04\bI\&quot;\x12hello haskell\x06:\x06ET&quot;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">irb(main):<span class="dv">003</span>:<span class="dv">0</span>&gt; <span class="dt">File</span>.open(<span class="st">&quot;example.bin&quot;</span>, <span class="st">&quot;w&quot;</span>) { |z| z.write(y) }</a></code></pre></div>
+<p>Switching over to Haskell we set up our imports.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">import</span> <span class="dt">Data.ByteString</span> (<span class="dt">ByteString</span>)</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">import</span> <span class="dt">Data.Ruby.Marshal</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString</span> <span class="kw">as</span> <span class="dt">BS</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">Char8</span></a></code></pre></div>
+<p>Define a function to read our example from the file system.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">readExample ::</span> <span class="dt">IO</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb10-2" title="2">readExample <span class="fu">=</span> BS.readFile <span class="st">&quot;example.bin&quot;</span></a></code></pre></div>
+<p>Define a function that uses the <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:Rubyable">Rubyable</a> typeclass to convert a <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">RubyObject</a> to a more convenient representation.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="ot">toString ::</span> <span class="dt">RubyObject</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">ByteString</span>, <span class="dt">RubyStringEncoding</span>)</a>
+<a class="sourceLine" id="cb11-2" title="2">toString rubyObject <span class="fu">=</span> fromRuby rubyObject</a></code></pre></div>
+<p>Before putting it all together to print the Ruby string to the console.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="co">-- Read example.bin.</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  example <span class="ot">&lt;-</span> readExample</a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="co">-- Decode using ruby-marshal and maybe convert the result to a bytestring.</span></a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="kw">case</span> decode example <span class="fu">&gt;&gt;=</span> toString <span class="kw">of</span></a>
+<a class="sourceLine" id="cb12-8" title="8"></a>
+<a class="sourceLine" id="cb12-9" title="9">    <span class="co">-- Handle the case when serialisation fails.</span></a>
+<a class="sourceLine" id="cb12-10" title="10">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb12-11" title="11">      <span class="fu">putStrLn</span> <span class="st">&quot;Oops, something went wrong...&quot;</span></a>
+<a class="sourceLine" id="cb12-12" title="12"></a>
+<a class="sourceLine" id="cb12-13" title="13">    <span class="co">-- Throw away the encoding information and print the Ruby string to the console.</span></a>
+<a class="sourceLine" id="cb12-14" title="14">    <span class="dt">Just</span> (string, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb12-15" title="15">      Char8.putStrLn string</a></code></pre></div>
+<h3 id="memcache">Memcache</h3>
+<p>Let’s take another example of de-serialising Ruby objects stored in <a href="https://memcached.org/">memcache</a> using the the <a href="https://github.com/petergoldstein/dalli">dalli gem</a>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb13-1" title="1">% irb</a>
+<a class="sourceLine" id="cb13-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; require <span class="st">&quot;dalli&quot;</span></a>
+<a class="sourceLine" id="cb13-3" title="3">=&gt; <span class="dv">true</span></a>
+<a class="sourceLine" id="cb13-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; dc = <span class="dt">Dalli</span>::<span class="dt">Client</span>.new(<span class="st">&quot;localhost:11211&quot;</span>)</a>
+<a class="sourceLine" id="cb13-5" title="5">=&gt; <span class="co">#&lt;Dalli::Client:0x007fe4948b7358 @servers=[&quot;localhost:11211&quot;], @options={}, @ring=nil&gt;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">irb(main):<span class="dv">003</span>:<span class="dv">0</span>&gt; dc.set(<span class="st">&quot;str&quot;</span>, <span class="st">&quot;hello haskell&quot;</span>)</a></code></pre></div>
+<p>We’ll reuse our existing Haskell code but add another import.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Database.Memcache.Client</span> <span class="kw">as</span> <span class="dt">M</span></a></code></pre></div>
+<p>Define a function that creates a new <a href="https://memcached.org/">memcache</a> client.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">createMemcacheClient ::</span> <span class="dt">IO</span> <span class="dt">M.Client</span></a>
+<a class="sourceLine" id="cb15-2" title="2">createMemcacheClient <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-3" title="3">  M.newClient [<span class="dt">M.ServerSpec</span> <span class="st">&quot;localhost&quot;</span> <span class="dv">11211</span> <span class="dt">M.NoAuth</span>] M.def</a></code></pre></div>
+<p>Before putting it all together to pull the value out of <a href="https://memcached.org/">memcache</a> and print the Ruby string to the console.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="co">-- Set up memcache client.</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  mc <span class="ot">&lt;-</span> createMemcacheClient</a>
+<a class="sourceLine" id="cb16-5" title="5"></a>
+<a class="sourceLine" id="cb16-6" title="6">  <span class="co">-- Retrieve bytestring from memcache server.</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  example <span class="ot">&lt;-</span> M.get mc <span class="st">&quot;str&quot;</span></a>
+<a class="sourceLine" id="cb16-8" title="8"></a>
+<a class="sourceLine" id="cb16-9" title="9">  <span class="co">-- Unpack result from memcache server.</span></a>
+<a class="sourceLine" id="cb16-10" title="10">  <span class="kw">case</span> example <span class="kw">of</span></a>
+<a class="sourceLine" id="cb16-11" title="11">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-12" title="12">      <span class="fu">putStrLn</span> <span class="st">&quot;Oops, key not found...&quot;</span></a>
+<a class="sourceLine" id="cb16-13" title="13"></a>
+<a class="sourceLine" id="cb16-14" title="14">    <span class="co">-- Pattern match to extract bytestring.</span></a>
+<a class="sourceLine" id="cb16-15" title="15">    <span class="dt">Just</span> (value, _, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-16" title="16"></a>
+<a class="sourceLine" id="cb16-17" title="17">      <span class="co">-- Decode using ruby-marshal and maybe convert the result to a bytestring.</span></a>
+<a class="sourceLine" id="cb16-18" title="18">      <span class="kw">case</span> decode value <span class="fu">&gt;&gt;=</span> toString <span class="kw">of</span></a>
+<a class="sourceLine" id="cb16-19" title="19"></a>
+<a class="sourceLine" id="cb16-20" title="20">        <span class="co">-- Handle the case when serialisation fails.</span></a>
+<a class="sourceLine" id="cb16-21" title="21">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-22" title="22">          <span class="fu">putStrLn</span> <span class="st">&quot;Oops, something went wrong...&quot;</span></a>
+<a class="sourceLine" id="cb16-23" title="23"></a>
+<a class="sourceLine" id="cb16-24" title="24">        <span class="co">-- Throw away the encoding information and print the Ruby string to the console.</span></a>
+<a class="sourceLine" id="cb16-25" title="25">        <span class="dt">Just</span> (string, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-26" title="26">          Char8.putStrLn string</a></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>By writing the <a href="https://hackage.haskell.org/package/ruby-marshal">ruby-marshal</a> package, I was able to create a Haskell web application that coexisted with a Rails application. This approach has been a success at work and appears to be one way in which you could gradually migrate an existing web application written in Ruby over to Haskell without the risk associated with a full rewrite.</p>
+<h2 id="links">Links</h2>
+<ul>
+<li><a href="https://github.com/filib/ruby-marshal" class="uri">https://github.com/filib/ruby-marshal</a></li>
+<li><a href="https://hackage.haskell.org/package/ruby-marshal" class="uri">https://hackage.haskell.org/package/ruby-marshal</a></li>
+<li><a href="https://hackage.haskell.org/package/rails-session" class="uri">https://hackage.haskell.org/package/rails-session</a></li>
+</ul>
+    </div>
+  </section>
+</div>
+
+      </div>
+    </div>
+  </body>
+</html>

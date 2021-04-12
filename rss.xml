@@ -1,0 +1,604 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Philip Cunningham: music, code and stuff.</title>
+        <link>https://filib.io</link>
+        <description><![CDATA[Philip is a Ruby and Haskell developer currently working remotely from Melbourne.]]></description>
+        <atom:link href="https://filib.io/rss.xml" rel="self"
+                   type="application/rss+xml" />
+        <lastBuildDate>Mon, 24 Dec 2018 00:00:00 UT</lastBuildDate>
+        <item>
+    <title>Testing distributed-process Apps Using Hspec</title>
+    <link>https://filib.io/posts/2018-12-24-testing-distributed-process-apps-with-hspec.html</link>
+    <description><![CDATA[<div>
+  <h1>
+    Testing distributed-process Apps Using Hspec
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2018-12-24
+      </h2>
+      <p>
+        <a href="/tags/distributed-process.html" class="post-category green">distributed-process</a> <a href="/tags/haskell.html" class="post-category green">haskell</a> <a href="/tags/hspec.html" class="post-category green">hspec</a> <a href="/tags/testing.html" class="post-category green">testing</a>
+      </p>
+    </header>
+
+    <div>
+      <p><a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> is a Haskell library that brings Erlang-style concurrency to Haskell. Whilst developing an application at work that uses it, I found that there wasn’t much material online describing how to test <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> applications. I used some techniques from object-oriented programming that allowed me to test the behaviour of my application whilst I was learning how it was supposed to fit together. This post documents some techniques I found useful.</p>
+<h2 id="application">Application</h2>
+<p>Our example revolves around a fairly simple <a href="https://en.wikipedia.org/wiki/Client%E2%80%93server_model">client-server</a> application. The client process can send data to the server and output responses to the console, whilst the server performs calculations and sends the results back to clients.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ot">{-# LANGUAGE TupleSections #-}</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">import</span> <span class="dt">Control.Distributed.Process</span> (<span class="dt">Process</span>, <span class="dt">ProcessId</span>, expect, getSelfPid, register, say, send, whereis)</a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">import</span> <span class="dt">Control.Distributed.Process.Node</span> (<span class="dt">LocalNode</span>, initRemoteTable, forkProcess, newLocalNode, runProcess)</a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">import</span> <span class="dt">Data.Binary</span> (<span class="dt">Binary</span>)</a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">import</span> <span class="dt">Network.Transport</span> (<span class="dt">Transport</span>(..))</a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">import</span> <span class="dt">Network.Transport.TCP</span> (createTransport, defaultTCPParameters)</a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="kw">import</span> <span class="dt">Protolude</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="kw">import</span> <span class="dt">Test.Hspec</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">-- APP</span></a>
+<a class="sourceLine" id="cb1-20" title="20"></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="ot">app ::</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-23" title="23">app node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-24" title="24">  _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> clientProcess</a>
+<a class="sourceLine" id="cb1-25" title="25">  _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;server&quot;</span> serverProcess</a>
+<a class="sourceLine" id="cb1-26" title="26">  <span class="fu">pure</span> ()</a>
+<a class="sourceLine" id="cb1-27" title="27"></a>
+<a class="sourceLine" id="cb1-28" title="28"></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="co">-- PROCESSES</span></a>
+<a class="sourceLine" id="cb1-30" title="30"></a>
+<a class="sourceLine" id="cb1-31" title="31"></a>
+<a class="sourceLine" id="cb1-32" title="32"><span class="kw">data</span> <span class="dt">ClientMsg</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-33" title="33">      <span class="dt">Ask</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-34" title="34">    <span class="fu">|</span> <span class="dt">Result</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-35" title="35">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Generic</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-36" title="36"></a>
+<a class="sourceLine" id="cb1-37" title="37"><span class="kw">instance</span> <span class="dt">Binary</span> <span class="dt">ClientMsg</span></a>
+<a class="sourceLine" id="cb1-38" title="38"></a>
+<a class="sourceLine" id="cb1-39" title="39"></a>
+<a class="sourceLine" id="cb1-40" title="40"><span class="ot">clientProcess ::</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-41" title="41">clientProcess <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-42" title="42">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb1-43" title="43"></a>
+<a class="sourceLine" id="cb1-44" title="44">  <span class="kw">case</span> msg <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-45" title="45">    <span class="dt">Ask</span> ints <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-46" title="46">      self <span class="ot">&lt;-</span> getSelfPid</a>
+<a class="sourceLine" id="cb1-47" title="47">      namedSend <span class="st">&quot;server&quot;</span> <span class="fu">$</span> <span class="dt">Calc</span> self ints</a>
+<a class="sourceLine" id="cb1-48" title="48"></a>
+<a class="sourceLine" id="cb1-49" title="49">    <span class="dt">Result</span> n <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb1-50" title="50">      say <span class="fu">$</span> <span class="st">&quot;received: &quot;</span> <span class="fu">&lt;&gt;</span> <span class="fu">show</span> n</a>
+<a class="sourceLine" id="cb1-51" title="51"></a>
+<a class="sourceLine" id="cb1-52" title="52"></a>
+<a class="sourceLine" id="cb1-53" title="53"><span class="kw">data</span> <span class="dt">ServerMsg</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-54" title="54">  <span class="dt">Calc</span> <span class="dt">ProcessId</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-55" title="55">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Generic</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-56" title="56"></a>
+<a class="sourceLine" id="cb1-57" title="57"></a>
+<a class="sourceLine" id="cb1-58" title="58"><span class="kw">instance</span> <span class="dt">Binary</span> <span class="dt">ServerMsg</span></a>
+<a class="sourceLine" id="cb1-59" title="59"></a>
+<a class="sourceLine" id="cb1-60" title="60"></a>
+<a class="sourceLine" id="cb1-61" title="61"><span class="ot">serverProcess ::</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-62" title="62">serverProcess <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-63" title="63">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb1-64" title="64"></a>
+<a class="sourceLine" id="cb1-65" title="65">  <span class="kw">case</span> msg <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-66" title="66">    <span class="dt">Calc</span> sender ints <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-67" title="67">      send sender <span class="fu">$</span> <span class="dt">Result</span> (<span class="fu">sum</span> ints)</a></code></pre></div>
+<p>The code above uses some helper functions that aren’t present in <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a>; these are included in the code below to let you follow along at home.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- PROCESS HELPERS</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">-- | Fork process and register it</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="ot">newProcess ::</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> () <span class="ot">-&gt;</span> <span class="dt">Process</span> <span class="dt">ProcessId</span></a>
+<a class="sourceLine" id="cb2-6" title="6">newProcess node name process <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  pid <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> forkProcess node process</a>
+<a class="sourceLine" id="cb2-8" title="8">  _ <span class="ot">&lt;-</span> register name pid</a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="fu">pure</span> pid</a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">-- | Create a new transport</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="ot">newTransport ::</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">IOException</span> <span class="dt">Transport</span>)</a>
+<a class="sourceLine" id="cb2-14" title="14">newTransport <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    host <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="st">&quot;localhost&quot;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    port <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-19" title="19">      <span class="st">&quot;3000&quot;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="kw">in</span></a>
+<a class="sourceLine" id="cb2-21" title="21">    createTransport host port (host,) defaultTCPParameters</a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="co">-- | Spins up an application</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="ot">run ::</span> (<span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">LocalNode</span>, <span class="dt">Transport</span>)</a>
+<a class="sourceLine" id="cb2-26" title="26">run app <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  eitherTrans <span class="ot">&lt;-</span> newTransport</a>
+<a class="sourceLine" id="cb2-28" title="28"></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="kw">case</span> eitherTrans <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="dt">Left</span> err <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-31" title="31">      panic <span class="fu">$</span> <span class="fu">show</span> err</a>
+<a class="sourceLine" id="cb2-32" title="32"></a>
+<a class="sourceLine" id="cb2-33" title="33">    <span class="dt">Right</span> transport <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-34" title="34">      node <span class="ot">&lt;-</span> newLocalNode transport initRemoteTable</a>
+<a class="sourceLine" id="cb2-35" title="35">      _    <span class="ot">&lt;-</span> runProcess node (app node)</a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">      <span class="fu">pure</span> (node, transport)</a>
+<a class="sourceLine" id="cb2-38" title="38"></a>
+<a class="sourceLine" id="cb2-39" title="39"></a>
+<a class="sourceLine" id="cb2-40" title="40"><span class="co">-- | Sends to a named process</span></a>
+<a class="sourceLine" id="cb2-41" title="41"><span class="ot">namedSend ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb2-42" title="42">namedSend name msg <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-43" title="43">  mbPid <span class="ot">&lt;-</span> whereis name</a>
+<a class="sourceLine" id="cb2-44" title="44"></a>
+<a class="sourceLine" id="cb2-45" title="45">  <span class="kw">case</span> mbPid <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-46" title="46">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-47" title="47">      say <span class="st">&quot;process not registered&quot;</span></a>
+<a class="sourceLine" id="cb2-48" title="48"></a>
+<a class="sourceLine" id="cb2-49" title="49">    <span class="dt">Just</span> pid <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-50" title="50">       send pid msg</a></code></pre></div>
+<h2 id="testing">Testing</h2>
+<p>We’ll start off by writing a custom <a href="https://hspec.github.io/writing-specs.html">HSpec</a> hook to make a bridge between our application and our tests. Our hook will spin up an application and thread around a shared <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a> and a <a href="http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode"><code>LocalNode</code></a>.</p>
+<p>The <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a> serves two purposes; it will be used to communicate state and act as locking mechanism (<a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar"><code>takeMVar</code></a> blocks until it’s full). Whilst the <a href="http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode"><code>LocalNode</code></a> will allow us to spin up adhoc processes when we need them.</p>
+<p>The functions <code>aroundApp</code> and <code>withApp</code> are the first step in bridging these two worlds.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- SPEC HELPERS</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">-- | Spins up and tears down app and passing along an mvar</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="ot">aroundApp ::</span> (<span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ())</a>
+<a class="sourceLine" id="cb3-6" title="6">          <span class="ot">-&gt;</span> <span class="dt">SpecWith</span> (<span class="dt">MVar</span> a, <span class="dt">LocalNode</span>)</a>
+<a class="sourceLine" id="cb3-7" title="7">          <span class="ot">-&gt;</span> <span class="dt">Spec</span></a>
+<a class="sourceLine" id="cb3-8" title="8">aroundApp app <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  around <span class="fu">$</span> withApp app</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="co">-- | Spins up application, closes it cleanly and passes along an mvar</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="ot">withApp ::</span> (<span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ())</a>
+<a class="sourceLine" id="cb3-14" title="14">        <span class="ot">-&gt;</span> (((<span class="dt">MVar</span> a, <span class="dt">LocalNode</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ())</a>
+<a class="sourceLine" id="cb3-15" title="15">withApp app action <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  mvar              <span class="ot">&lt;-</span> newEmptyMVar</a>
+<a class="sourceLine" id="cb3-17" title="17">  (node, transport) <span class="ot">&lt;-</span> run <span class="fu">$</span> app mvar</a>
+<a class="sourceLine" id="cb3-18" title="18">  finally (action (mvar, node)) (closeTransport transport)</a></code></pre></div>
+<p>The second step in bridging these worlds is defining a function that’ll listen for messages that are sent to a process and put them in our <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- | Listens for messages and writes msg to an mvar</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ot">writer ::</span> (<span class="dt">Binary</span> a, <span class="dt">Show</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb4-3" title="3">writer mvar <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb4-5" title="5">  liftIO <span class="fu">$</span> putMVar mvar msg</a></code></pre></div>
+<p>Using these functions, we’ll write our first test. It’s important that we’re confident our application spins up all of the relevant processes it needs to function correctly. We’ll do this by starting our application, checking whether the process is registered and putting the result in our <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- SPECS</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-5" title="5">main <span class="fu">=</span> hspec <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-8" title="8">      _ <span class="ot">&lt;-</span> app node</a>
+<a class="sourceLine" id="cb5-9" title="9">      x <span class="ot">&lt;-</span> whereis <span class="st">&quot;client&quot;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">      y <span class="ot">&lt;-</span> whereis <span class="st">&quot;server&quot;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">      liftIO <span class="fu">$</span> putMVar mvar [x, y]</a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    describe <span class="st">&quot;app&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-15" title="15">      it <span class="st">&quot;should spin up every process&quot;</span> <span class="fu">$</span> \(mvar, _) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-16" title="16">        mbPids <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb5-17" title="17">        <span class="fu">any</span> isNothing mbPids <span class="ot">`shouldBe`</span> <span class="dt">False</span></a></code></pre></div>
+<p>From here we’ll want to test that our processes communicate — i.e. send and receive appropriate messages — with one another as we expect. We do this by starting a client process and registering a server <a href="https://martinfowler.com/bliki/TestDouble.html">test double</a> that’ll listen for messages sent to it using the <code>writer</code> function.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-2" title="2">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-3" title="3">      _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> clientProcess</a>
+<a class="sourceLine" id="cb6-4" title="4">      _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;server&quot;</span> <span class="fu">$</span> writer mvar</a>
+<a class="sourceLine" id="cb6-5" title="5">      <span class="fu">pure</span> ()</a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    describe <span class="st">&quot;Ask ints&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-9" title="9">      it <span class="st">&quot;should call the server process&quot;</span> <span class="fu">$</span> \(mvar, node) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-10" title="10">        _ <span class="ot">&lt;-</span> forkProcess node <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-11" title="11">          namedSend <span class="st">&quot;client&quot;</span> (<span class="dt">Ask</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>])</a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="dt">Calc</span> _ ints <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb6-14" title="14">        ints <span class="ot">`shouldBe`</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</a></code></pre></div>
+<p>Finally we’ll want to test our server process calculates results correctly and sends them back to clients. We do this by starting our server process and sending a message to it from a <a href="https://martinfowler.com/bliki/TestDouble.html">test double</a> client process.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" title="3">      void <span class="fu">$</span> newProcess node <span class="st">&quot;server&quot;</span> serverProcess</a>
+<a class="sourceLine" id="cb7-4" title="4"></a>
+<a class="sourceLine" id="cb7-5" title="5">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    describe <span class="st">&quot;Result i&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-7" title="7">      it <span class="st">&quot;should call the client process with the result&quot;</span> <span class="fu">$</span> \(mvar, node) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-8" title="8">        _ <span class="ot">&lt;-</span> forkProcess node <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-9" title="9">          pid <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> <span class="fu">$</span> writer mvar</a>
+<a class="sourceLine" id="cb7-10" title="10">          namedSend <span class="st">&quot;server&quot;</span> <span class="fu">$</span> <span class="dt">Calc</span> pid [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</a>
+<a class="sourceLine" id="cb7-11" title="11"></a>
+<a class="sourceLine" id="cb7-12" title="12">        <span class="dt">Result</span> i <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb7-13" title="13">        i <span class="ot">`shouldBe`</span> <span class="dv">10</span></a></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>The approach described in this post reflects some of my background in object-oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing.</p>
+<p>There are obviously some shortcomings to the techniques described — the big one being that the type checker doesn’t complain when you send an unknown message to a process. That said, the approach <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> makes you take is very consistent and makes it pleasant to write asynchronous applications.</p>
+<p>Hopefully what I’ve written here offers some insight into how you might begin testing your <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> applications.</p>
+    </div>
+  </section>
+</div>
+]]></description>
+    <pubDate>Mon, 24 Dec 2018 00:00:00 UT</pubDate>
+    <guid>https://filib.io/posts/2018-12-24-testing-distributed-process-apps-with-hspec.html</guid>
+    <dc:creator>Philip Cunningham</dc:creator>
+</item>
+<item>
+    <title>Parse Ruby Objects in Haskell</title>
+    <link>https://filib.io/posts/2017-04-24-parse-ruby-objects-in-haskell.html</link>
+    <description><![CDATA[<div>
+  <h1>
+    Parse Ruby Objects in Haskell
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2017-04-24
+      </h2>
+      <p>
+        <a href="/tags/haskell.html" class="post-category green">haskell</a> <a href="/tags/ruby.html" class="post-category green">ruby</a>
+      </p>
+    </header>
+
+    <div>
+      <p>In 2015 I released my first Haskell project <a href="https://www.reddit.com/r/haskell/comments/3enysr/my_first_haskell_project_a_ruby_marshal_parser/">ruby-marshal</a>. It’s a package that uses the <a href="https://hackage.haskell.org/package/binary">binary</a> package to parse Ruby objects serialised with <a href="https://ruby-doc.org/core-2.2.2/Marshal.html#method-c-dump">Marshal.dump</a>. I wrote it in my spare time because I was curious to know whether I could devise a strategy to incrementally migrate legacy Ruby on Rails applications over to Haskell without the risk associated with a full rewrite.</p>
+<p>My hypothesis was that if I could decrypt and de-serialise Rails sessions then I’d be able to piggyback on the Rails application’s authentication mechanism. Not long after, I had the opportunity to use this package at work, and put this theory to the test, by writing a Haskell web application that shared sessions with Rails.</p>
+<p>It has been running in production – without any issue – for almost two years.</p>
+<h2 id="marshal">Marshal</h2>
+<p>Ruby’s <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> library serialises Ruby objects to a bytestring e.g. dumping <code>true</code> results in <code>[4, 8, 84]</code> where <code>4</code> and <code>8</code> are the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> version number and <code>true</code> is represented as <code>84</code> or ASCII <code>T</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1">% irb</a>
+<a class="sourceLine" id="cb1-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="dt">Marshal</span>.dump(<span class="dv">true</span>)</a>
+<a class="sourceLine" id="cb1-3" title="3">=&gt; <span class="st">&quot;\x04\bT&quot;</span></a>
+<a class="sourceLine" id="cb1-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; x.bytes</a>
+<a class="sourceLine" id="cb1-5" title="5">=&gt; [<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">84</span>]</a></code></pre></div>
+<p>Compound objects, e.g. hash maps, can also be serialised using <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a>. This might explain why it was used as the default cookie serialiser in Rails until version 4.1, after which <a href="https://github.com/rails/rails/issues/12881">JSON serialisation became the default</a>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1">% irb</a>
+<a class="sourceLine" id="cb2-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="dt">Marshal</span>.dump(<span class="st">&quot;session_id&quot;</span> =&gt; <span class="st">&quot;ba0844151d&quot;</span>)</a>
+<a class="sourceLine" id="cb2-3" title="3">=&gt; <span class="st">&quot;\x04\b{\x06I\&quot;\x0Fsession_id\x06:\x06ETI\&quot;\x0Fba0844151d\x06;\x00T&quot;</span></a>
+<a class="sourceLine" id="cb2-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; x.bytes</a>
+<a class="sourceLine" id="cb2-5" title="5">=&gt; [<span class="dv">4</span>, <span class="dv">8</span>, <span class="dv">123</span>, <span class="dv">6</span>, <span class="dv">73</span>, <span class="dv">34</span>, <span class="dv">15</span>, <span class="dv">115</span>, <span class="dv">101</span>, <span class="dv">115</span>, <span class="dv">115</span>, <span class="dv">105</span>, <span class="dv">111</span>, <span class="dv">110</span>, <span class="dv">95</span>, <span class="dv">105</span>, <span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">58</span>, <span class="dv">6</span>, <span class="dv">69</span>, <span class="dv">84</span>, <span class="dv">73</span>, <span class="dv">34</span>, <span class="dv">15</span>, <span class="dv">98</span>, <span class="dv">97</span>, <span class="dv">48</span>, <span class="dv">56</span>, <span class="dv">52</span>, <span class="dv">52</span>, <span class="dv">49</span>, <span class="dv">53</span>, <span class="dv">49</span>, <span class="dv">100</span>, <span class="dv">6</span>, <span class="dv">59</span>, <span class="dv">0</span>, <span class="dv">84</span>]</a></code></pre></div>
+<p>More information about the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a> binary format can be found in a series of blog posts by <a href="http://jakegoulding.com/blog/2013/01/15/a-little-dip-into-rubys-marshal-format/">@jakegoulding</a> or by <a href="https://github.com/filib/ruby-marshal/blob/master/src/Data/Ruby/Marshal/Get.hs">reviewing the ruby-marshal source code</a>.</p>
+<h2 id="design">Design</h2>
+<p>The <a href="https://hackage.haskell.org/package/ruby-marshal">ruby-marshal</a> package allows us to transform this binary format into Haskell values and follows a pattern you’ll see elsewhere in the Haskell ecosystem. It consists of:</p>
+<ul>
+<li>An abstract syntax tree (<a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a>) that represents Ruby objects.</li>
+<li>A collection of <a href="https://en.wikipedia.org/wiki/Parser_combinator">parser combinators</a> to transform the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> binary representation into an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a>.</li>
+<li>A custom <a href="https://wiki.haskell.org/Monad">monad</a> to enrich the underlying <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/binary-0.8.3.0/Data-Binary-Get.html#t:Get">Get monad</a> with additional effects.</li>
+</ul>
+<h3 id="ast">AST</h3>
+<p>The <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">Ruby AST</a> represents a subset of values that can be encoded by <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal.dump</a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="kw">data</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb3-2" title="2">  <span class="co">-- Simple objects.</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="fu">=</span> <span class="dt">RNil</span></a>
+<a class="sourceLine" id="cb3-4" title="4">  <span class="fu">|</span> <span class="dt">RBool</span> <span class="dt">Bool</span></a>
+<a class="sourceLine" id="cb3-5" title="5">  <span class="fu">|</span> <span class="dt">RFixnum</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb3-6" title="6">  <span class="fu">|</span> <span class="dt">RFloat</span> <span class="dt">Float</span></a>
+<a class="sourceLine" id="cb3-7" title="7">  <span class="fu">|</span> <span class="dt">RString</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb3-8" title="8">  <span class="fu">|</span> <span class="dt">RSymbol</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  <span class="co">-- Compound objects.</span></a>
+<a class="sourceLine" id="cb3-10" title="10">  <span class="fu">|</span> <span class="dt">RArray</span> (<span class="dt">Vector</span> <span class="dt">RubyObject</span>)</a>
+<a class="sourceLine" id="cb3-11" title="11">  <span class="fu">|</span> <span class="dt">RHash</span> (<span class="dt">Vector</span> (<span class="dt">RubyObject</span>, <span class="dt">RubyObject</span>))</a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="fu">|</span> <span class="dt">RIVar</span> (<span class="dt">RubyObject</span>, <span class="dt">RubyStringEncoding</span>)</a>
+<a class="sourceLine" id="cb3-13" title="13">  <span class="co">-- Tag for unsupported objects e.g. Bignum.</span></a>
+<a class="sourceLine" id="cb3-14" title="14">  <span class="fu">|</span> <span class="dt">Unsupported</span></a></code></pre></div>
+<p>This is a common pattern you’ll see in other packages e.g. <a href="https://hackage.haskell.org/package/msgpack-1.0.0/docs/Data-MessagePack-Object.html#t:Object">msgpack:Object</a> and <a href="https://hackage.haskell.org/package/aeson-1.2.0.0/docs/Data-Aeson.html#t:Value">aeson:Value</a>.</p>
+<h3 id="parsers-combinators">Parsers Combinators</h3>
+<p><a href="https://en.wikipedia.org/wiki/Parser_combinator">Parsers</a> are combined to build an <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">AST</a> e.g. parsing a raw bytestring is defined as follows.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="ot">getString ::</span> <span class="dt">Marshal</span> <span class="dt">BS.ByteString</span></a>
+<a class="sourceLine" id="cb4-2" title="2">getString <span class="fu">=</span></a>
+<a class="sourceLine" id="cb4-3" title="3">  <span class="co">-- Label a parser to ensure label will be appended if the parse fails.</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  marshalLabel <span class="st">&quot;RawString&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-5" title="5">    <span class="co">-- Get the number of bytes in the bytestring.</span></a>
+<a class="sourceLine" id="cb4-6" title="6">    n <span class="ot">&lt;-</span> getFixnum</a>
+<a class="sourceLine" id="cb4-7" title="7">    <span class="co">-- Get the number of bytes in the bytestring and lift it into the Marshal monad.</span></a>
+<a class="sourceLine" id="cb4-8" title="8">    liftMarshal <span class="fu">$</span> getBytes n</a></code></pre></div>
+<p>It is then used by other parsing functions e.g. parsing a <a href="https://ruby-doc.org/core-2.2.2/Symbol.html">Ruby symbol</a>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="ot">getSymbol ::</span> <span class="dt">Marshal</span> <span class="dt">BS.ByteString</span></a>
+<a class="sourceLine" id="cb5-2" title="2">getSymbol <span class="fu">=</span> marshalLabel <span class="st">&quot;Symbol&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-3" title="3">  <span class="co">-- Get bytestring.</span></a>
+<a class="sourceLine" id="cb5-4" title="4">  x <span class="ot">&lt;-</span> getString</a>
+<a class="sourceLine" id="cb5-5" title="5">  <span class="co">-- Write symbol into the symbol cache.</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  writeCache <span class="fu">$</span> <span class="dt">RSymbol</span> x</a>
+<a class="sourceLine" id="cb5-7" title="7">  <span class="co">-- Return the bytestring.</span></a>
+<a class="sourceLine" id="cb5-8" title="8">  <span class="fu">return</span> x</a></code></pre></div>
+<p>Before being used in the top level parsing function that combines parsing functions and lifts values in to the <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">Ruby AST</a>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1"><span class="ot">getRubyObject ::</span> <span class="dt">Marshal</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb6-2" title="2">getRubyObject <span class="fu">=</span></a>
+<a class="sourceLine" id="cb6-3" title="3">  <span class="co">-- Make sure we&#39;re using a supported Marshal version, throw away the result and recursively parse our bytestring.</span></a>
+<a class="sourceLine" id="cb6-4" title="4">  getMarshalVersion <span class="fu">&gt;&gt;</span> go</a>
+<a class="sourceLine" id="cb6-5" title="5">  <span class="kw">where</span></a>
+<a class="sourceLine" id="cb6-6" title="6"><span class="ot">    go ::</span> <span class="dt">Marshal</span> <span class="dt">RubyObject</span></a>
+<a class="sourceLine" id="cb6-7" title="7">    go <span class="fu">=</span> liftMarshal getWord8 <span class="fu">&gt;&gt;=</span> \<span class="kw">case</span></a>
+<a class="sourceLine" id="cb6-8" title="8">           <span class="dt">NilChar</span>        <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">RNil</span></a>
+<a class="sourceLine" id="cb6-9" title="9">           <span class="dt">TrueChar</span>       <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">RBool</span> <span class="dt">True</span></a>
+<a class="sourceLine" id="cb6-10" title="10">           <span class="dt">FalseChar</span>      <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">RBool</span> <span class="dt">False</span></a>
+<a class="sourceLine" id="cb6-11" title="11">           <span class="dt">FixnumChar</span>     <span class="ot">-&gt;</span> <span class="dt">RFixnum</span> <span class="fu">&lt;$&gt;</span> getFixnum</a>
+<a class="sourceLine" id="cb6-12" title="12">           <span class="dt">FloatChar</span>      <span class="ot">-&gt;</span> <span class="dt">RFloat</span> <span class="fu">&lt;$&gt;</span> getFloat</a>
+<a class="sourceLine" id="cb6-13" title="13">           <span class="dt">StringChar</span>     <span class="ot">-&gt;</span> <span class="dt">RString</span> <span class="fu">&lt;$&gt;</span> getString</a>
+<a class="sourceLine" id="cb6-14" title="14">           <span class="dt">SymbolChar</span>     <span class="ot">-&gt;</span> <span class="dt">RSymbol</span> <span class="fu">&lt;$&gt;</span> getSymbol</a>
+<a class="sourceLine" id="cb6-15" title="15">           <span class="dt">ObjectLinkChar</span> <span class="ot">-&gt;</span> <span class="dt">RIVar</span> <span class="fu">&lt;$&gt;</span> getObjectLink</a>
+<a class="sourceLine" id="cb6-16" title="16">           <span class="dt">SymlinkChar</span>    <span class="ot">-&gt;</span> <span class="dt">RSymbol</span> <span class="fu">&lt;$&gt;</span> getSymlink</a>
+<a class="sourceLine" id="cb6-17" title="17">           <span class="dt">ArrayChar</span>      <span class="ot">-&gt;</span> <span class="dt">RArray</span> <span class="fu">&lt;$&gt;</span> getArray go</a>
+<a class="sourceLine" id="cb6-18" title="18">           <span class="dt">HashChar</span>       <span class="ot">-&gt;</span> <span class="dt">RHash</span> <span class="fu">&lt;$&gt;</span> getHash go go</a>
+<a class="sourceLine" id="cb6-19" title="19">           <span class="dt">IVarChar</span>       <span class="ot">-&gt;</span> <span class="dt">RIVar</span> <span class="fu">&lt;$&gt;</span> getIVar go</a>
+<a class="sourceLine" id="cb6-20" title="20">           _              <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="dt">Unsupported</span></a></code></pre></div>
+<h3 id="marshal-monad">Marshal Monad</h3>
+<p>A quirk of the <a href="https://ruby-doc.org/core-2.2.2/Marshal.html">Marshal</a> format is that it saves space by encoding repeated objects as indexes into a symbol cache and an object cache. We use <code>StateT</code> to keep track of these during de-serialisation and enrich the underlying <a href="https://downloads.haskell.org/~ghc/8.0.1/docs/html/libraries/binary-0.8.3.0/Data-Binary-Get.html#t:Get">Get monad</a> by creating a custom <a href="https://wiki.haskell.org/Monad">monad</a>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">newtype</span> <span class="dt">Marshal</span> a <span class="fu">=</span> <span class="dt">Marshal</span> {<span class="ot"> runMarshal ::</span> <span class="dt">StateT</span> <span class="dt">Cache</span> <span class="dt">Get</span> a }</a>
+<a class="sourceLine" id="cb7-2" title="2">  <span class="kw">deriving</span> (<span class="dt">Functor</span>, <span class="dt">Applicative</span>, <span class="dt">Monad</span>, <span class="dt">MonadState</span> <span class="dt">Cache</span>)</a></code></pre></div>
+<p>This allows us to write to and read from our cache during parsing without having to manually thread state through our parsing functions.</p>
+<h2 id="examples">Examples</h2>
+<h3 id="file-io">File IO</h3>
+<p>Let’s take a simple example of a Ruby string, serialise it and dump it to the file system using <code>irb</code>.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb8-1" title="1">% irb</a>
+<a class="sourceLine" id="cb8-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; x = <span class="st">&quot;hello haskell&quot;</span></a>
+<a class="sourceLine" id="cb8-3" title="3">=&gt; <span class="st">&quot;hello haskell&quot;</span></a>
+<a class="sourceLine" id="cb8-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; y = <span class="dt">Marshal</span>.dump(x)</a>
+<a class="sourceLine" id="cb8-5" title="5">=&gt; <span class="st">&quot;\x04\bI\&quot;\x12hello haskell\x06:\x06ET&quot;</span></a>
+<a class="sourceLine" id="cb8-6" title="6">irb(main):<span class="dv">003</span>:<span class="dv">0</span>&gt; <span class="dt">File</span>.open(<span class="st">&quot;example.bin&quot;</span>, <span class="st">&quot;w&quot;</span>) { |z| z.write(y) }</a></code></pre></div>
+<p>Switching over to Haskell we set up our imports.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="kw">import</span> <span class="dt">Data.ByteString</span> (<span class="dt">ByteString</span>)</a>
+<a class="sourceLine" id="cb9-2" title="2"><span class="kw">import</span> <span class="dt">Data.Ruby.Marshal</span></a>
+<a class="sourceLine" id="cb9-3" title="3"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString</span> <span class="kw">as</span> <span class="dt">BS</span></a>
+<a class="sourceLine" id="cb9-4" title="4"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.ByteString.Char8</span> <span class="kw">as</span> <span class="dt">Char8</span></a></code></pre></div>
+<p>Define a function to read our example from the file system.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">readExample ::</span> <span class="dt">IO</span> <span class="dt">ByteString</span></a>
+<a class="sourceLine" id="cb10-2" title="2">readExample <span class="fu">=</span> BS.readFile <span class="st">&quot;example.bin&quot;</span></a></code></pre></div>
+<p>Define a function that uses the <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:Rubyable">Rubyable</a> typeclass to convert a <a href="https://hackage.haskell.org/package/ruby-marshal-0.1.2/docs/Data-Ruby-Marshal-RubyObject.html#t:RubyObject">RubyObject</a> to a more convenient representation.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb11-1" title="1"><span class="ot">toString ::</span> <span class="dt">RubyObject</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (<span class="dt">ByteString</span>, <span class="dt">RubyStringEncoding</span>)</a>
+<a class="sourceLine" id="cb11-2" title="2">toString rubyObject <span class="fu">=</span> fromRuby rubyObject</a></code></pre></div>
+<p>Before putting it all together to print the Ruby string to the console.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb12-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb12-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb12-3" title="3">  <span class="co">-- Read example.bin.</span></a>
+<a class="sourceLine" id="cb12-4" title="4">  example <span class="ot">&lt;-</span> readExample</a>
+<a class="sourceLine" id="cb12-5" title="5"></a>
+<a class="sourceLine" id="cb12-6" title="6">  <span class="co">-- Decode using ruby-marshal and maybe convert the result to a bytestring.</span></a>
+<a class="sourceLine" id="cb12-7" title="7">  <span class="kw">case</span> decode example <span class="fu">&gt;&gt;=</span> toString <span class="kw">of</span></a>
+<a class="sourceLine" id="cb12-8" title="8"></a>
+<a class="sourceLine" id="cb12-9" title="9">    <span class="co">-- Handle the case when serialisation fails.</span></a>
+<a class="sourceLine" id="cb12-10" title="10">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb12-11" title="11">      <span class="fu">putStrLn</span> <span class="st">&quot;Oops, something went wrong...&quot;</span></a>
+<a class="sourceLine" id="cb12-12" title="12"></a>
+<a class="sourceLine" id="cb12-13" title="13">    <span class="co">-- Throw away the encoding information and print the Ruby string to the console.</span></a>
+<a class="sourceLine" id="cb12-14" title="14">    <span class="dt">Just</span> (string, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb12-15" title="15">      Char8.putStrLn string</a></code></pre></div>
+<h3 id="memcache">Memcache</h3>
+<p>Let’s take another example of de-serialising Ruby objects stored in <a href="https://memcached.org/">memcache</a> using the the <a href="https://github.com/petergoldstein/dalli">dalli gem</a>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb13-1" title="1">% irb</a>
+<a class="sourceLine" id="cb13-2" title="2">irb(main):<span class="dv">001</span>:<span class="dv">0</span>&gt; require <span class="st">&quot;dalli&quot;</span></a>
+<a class="sourceLine" id="cb13-3" title="3">=&gt; <span class="dv">true</span></a>
+<a class="sourceLine" id="cb13-4" title="4">irb(main):<span class="dv">002</span>:<span class="dv">0</span>&gt; dc = <span class="dt">Dalli</span>::<span class="dt">Client</span>.new(<span class="st">&quot;localhost:11211&quot;</span>)</a>
+<a class="sourceLine" id="cb13-5" title="5">=&gt; <span class="co">#&lt;Dalli::Client:0x007fe4948b7358 @servers=[&quot;localhost:11211&quot;], @options={}, @ring=nil&gt;</span></a>
+<a class="sourceLine" id="cb13-6" title="6">irb(main):<span class="dv">003</span>:<span class="dv">0</span>&gt; dc.set(<span class="st">&quot;str&quot;</span>, <span class="st">&quot;hello haskell&quot;</span>)</a></code></pre></div>
+<p>We’ll reuse our existing Haskell code but add another import.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb14-1" title="1"><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Database.Memcache.Client</span> <span class="kw">as</span> <span class="dt">M</span></a></code></pre></div>
+<p>Define a function that creates a new <a href="https://memcached.org/">memcache</a> client.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb15-1" title="1"><span class="ot">createMemcacheClient ::</span> <span class="dt">IO</span> <span class="dt">M.Client</span></a>
+<a class="sourceLine" id="cb15-2" title="2">createMemcacheClient <span class="fu">=</span></a>
+<a class="sourceLine" id="cb15-3" title="3">  M.newClient [<span class="dt">M.ServerSpec</span> <span class="st">&quot;localhost&quot;</span> <span class="dv">11211</span> <span class="dt">M.NoAuth</span>] M.def</a></code></pre></div>
+<p>Before putting it all together to pull the value out of <a href="https://memcached.org/">memcache</a> and print the Ruby string to the console.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb16-1" title="1"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb16-2" title="2">main <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb16-3" title="3">  <span class="co">-- Set up memcache client.</span></a>
+<a class="sourceLine" id="cb16-4" title="4">  mc <span class="ot">&lt;-</span> createMemcacheClient</a>
+<a class="sourceLine" id="cb16-5" title="5"></a>
+<a class="sourceLine" id="cb16-6" title="6">  <span class="co">-- Retrieve bytestring from memcache server.</span></a>
+<a class="sourceLine" id="cb16-7" title="7">  example <span class="ot">&lt;-</span> M.get mc <span class="st">&quot;str&quot;</span></a>
+<a class="sourceLine" id="cb16-8" title="8"></a>
+<a class="sourceLine" id="cb16-9" title="9">  <span class="co">-- Unpack result from memcache server.</span></a>
+<a class="sourceLine" id="cb16-10" title="10">  <span class="kw">case</span> example <span class="kw">of</span></a>
+<a class="sourceLine" id="cb16-11" title="11">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-12" title="12">      <span class="fu">putStrLn</span> <span class="st">&quot;Oops, key not found...&quot;</span></a>
+<a class="sourceLine" id="cb16-13" title="13"></a>
+<a class="sourceLine" id="cb16-14" title="14">    <span class="co">-- Pattern match to extract bytestring.</span></a>
+<a class="sourceLine" id="cb16-15" title="15">    <span class="dt">Just</span> (value, _, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-16" title="16"></a>
+<a class="sourceLine" id="cb16-17" title="17">      <span class="co">-- Decode using ruby-marshal and maybe convert the result to a bytestring.</span></a>
+<a class="sourceLine" id="cb16-18" title="18">      <span class="kw">case</span> decode value <span class="fu">&gt;&gt;=</span> toString <span class="kw">of</span></a>
+<a class="sourceLine" id="cb16-19" title="19"></a>
+<a class="sourceLine" id="cb16-20" title="20">        <span class="co">-- Handle the case when serialisation fails.</span></a>
+<a class="sourceLine" id="cb16-21" title="21">        <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-22" title="22">          <span class="fu">putStrLn</span> <span class="st">&quot;Oops, something went wrong...&quot;</span></a>
+<a class="sourceLine" id="cb16-23" title="23"></a>
+<a class="sourceLine" id="cb16-24" title="24">        <span class="co">-- Throw away the encoding information and print the Ruby string to the console.</span></a>
+<a class="sourceLine" id="cb16-25" title="25">        <span class="dt">Just</span> (string, _) <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb16-26" title="26">          Char8.putStrLn string</a></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>By writing the <a href="https://hackage.haskell.org/package/ruby-marshal">ruby-marshal</a> package, I was able to create a Haskell web application that coexisted with a Rails application. This approach has been a success at work and appears to be one way in which you could gradually migrate an existing web application written in Ruby over to Haskell without the risk associated with a full rewrite.</p>
+<h2 id="links">Links</h2>
+<ul>
+<li><a href="https://github.com/filib/ruby-marshal" class="uri">https://github.com/filib/ruby-marshal</a></li>
+<li><a href="https://hackage.haskell.org/package/ruby-marshal" class="uri">https://hackage.haskell.org/package/ruby-marshal</a></li>
+<li><a href="https://hackage.haskell.org/package/rails-session" class="uri">https://hackage.haskell.org/package/rails-session</a></li>
+</ul>
+    </div>
+  </section>
+</div>
+]]></description>
+    <pubDate>Mon, 24 Apr 2017 00:00:00 UT</pubDate>
+    <guid>https://filib.io/posts/2017-04-24-parse-ruby-objects-in-haskell.html</guid>
+    <dc:creator>Philip Cunningham</dc:creator>
+</item>
+<item>
+    <title>Writing PureScript Bindings for a jQuery Plugin</title>
+    <link>https://filib.io/posts/2015-11-06-writing-purescript-bindings-for-a-jquery-plugin.html</link>
+    <description><![CDATA[<div>
+  <h1>
+    Writing PureScript Bindings for a jQuery Plugin
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2015-11-06
+      </h2>
+      <p>
+        <a href="/tags/javascript.html" class="post-category green">javascript</a> <a href="/tags/purescript.html" class="post-category green">purescript</a>
+      </p>
+    </header>
+
+    <div>
+      <p>You’ve started a new project at work with a tight deadline. You’re in charge of picking the stack and after assessing technologies best for the project you’ve decided to use <a href="http://www.purescript.org/">PureScript</a> on the front-end. One factor determining the success of the project is that it be delivered on time.</p>
+<p>PureScript is the technology I chose for a new project at work and one of the ways it’s helping my company deliver our project on time is by allowing us to leverage existing JavaScript libraries using its <a href="https://en.wikipedia.org/wiki/Foreign_function_interface">foreign function interface (FFI)</a>, whilst still allowing us to exploit strong typing. The experience of writing FFI bindings has been so positive that I wanted to share with you how you might write your own bindings for an existing <a href="https://github.com/jquery/jquery">jQuery</a> plugin.</p>
+<p>In this post, together we’ll be writing bindings for a subset of the functionality of <a href="https://github.com/rstaib/jquery-steps">jQuery-steps</a>: a lightweight wizard UI component written for jQuery. This won’t be a deep dive into PureScript’s FFI but will give you an insight into some of the practical considerations involved in using JavaScript code from PureScript. It assumes familiarity with JavaScript, PureScript and jQuery.</p>
+<h2 id="ffi">FFI</h2>
+<p><a href="https://leanpub.com/purescript/read#leanpub-auto-the-foreign-function-interface">PureScript’s FFI</a> allows communication from PureScript code to JavaScript code. It’s straight-forward and flexible, making it possible to write bindings for even the most involved JavaScript code. Provided, that is, that you understand the underlying runtime representation of what you’re dealing with.</p>
+<h2 id="configuration">Configuration</h2>
+<p>As is typical for jQuery plugins, jQuery-steps takes a configuration object to tell it which DOM elements it should bind to. We begin by defining the types we’ll need to safely represent the fields of this configuration object in PureScript.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">module</span> <span class="dt">JQuery.Steps</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">import</span> <span class="dt">Control.Monad.Eff</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">import</span> <span class="dt">Control.Monad.Eff.JQuery</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">import</span> <span class="dt">Control.Monad.Eff.Unsafe</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">import</span> <span class="dt">DOM</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">import</span> <span class="dt">Data.Foreign.Callback</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="kw">import</span> <span class="dt">Data.Function</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">import</span> <span class="dt">Prelude</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">newtype</span> <span class="dt">HeaderTag</span> <span class="fu">=</span> <span class="dt">HeaderTag</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">newtype</span> <span class="dt">BodyTag</span> <span class="fu">=</span> <span class="dt">BodyTag</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">newtype</span> <span class="dt">CssClass</span> <span class="fu">=</span> <span class="dt">CssClass</span> <span class="dt">String</span></a></code></pre></div>
+<p>We use <a href="https://leanpub.com/purescript/read#leanpub-auto-newtypes">newtype</a> wrappers to represent the values of the fields in our configuration object. We do this because newtypes have the same runtime representation as the underlying type, whilst being distinct from the perspective of the type checker. This makes newtypes an easy win for providing an extra layer of type safety when defining FFI bindings.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">type</span> <span class="dt">Config</span> <span class="fu">=</span> {<span class="ot"> headerTag ::</span> <span class="dt">HeaderTag</span></a>
+<a class="sourceLine" id="cb2-2" title="2">              ,<span class="ot"> bodyTag   ::</span> <span class="dt">BodyTag</span></a>
+<a class="sourceLine" id="cb2-3" title="3">              ,<span class="ot"> cssClass  ::</span> <span class="dt">CssClass</span></a>
+<a class="sourceLine" id="cb2-4" title="4">              }</a></code></pre></div>
+<p>We use a <a href="https://leanpub.com/purescript/read#leanpub-auto-defining-our-types">type synonym</a> to represent our configuration rather than an <a href="https://leanpub.com/purescript/read#leanpub-auto-algebraic-data-types">algebraic data type</a> (ADT). Much like a newtype, the type synonym’s runtime representation will have a direct correspondence with what jQuery-steps expects, whereas an ADT’s constructors would present an extra level of indirection that we’d have to handle in our JavaScript wrapper.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">defaultConfig ::</span> <span class="dt">Config</span></a>
+<a class="sourceLine" id="cb3-2" title="2">defaultConfig <span class="fu">=</span> { headerTag<span class="fu">:</span> <span class="dt">HeaderTag</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">                , bodyTag<span class="fu">:</span> <span class="dt">BodyTag</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">                , cssClass<span class="fu">:</span> <span class="dt">CssClass</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">                }</a></code></pre></div>
+<p>We define a default configuration object to let consumers of our bindings use <a href="https://leanpub.com/purescript/read#leanpub-auto-putting-row-polymorphism-to-work">record update syntax</a> to override the defaults we’ve set.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> defaultConfig <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">      <span class="dt">headerTag</span><span class="op">:</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="op">,</span> <span class="dt">bodyTag</span><span class="op">:</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="op">,</span> <span class="dt">cssClass</span><span class="op">:</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Here’s what <strong>defaultConfig</strong> will look like at runtime. You can see that despite adding an extra layer of type safety when working with our configuration object in PureScript, we don’t pay any extra cost for the abstraction at runtime. Practically speaking, this means that we can pass our configuration object directly to jQuery-steps.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">/*global exports, jQuery*/</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="st">&quot;use strict&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="co">// module JQuery.Steps</span></a>
+<a class="sourceLine" id="cb5-6" title="6"></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="va">exports</span>.<span class="at">steps</span> <span class="op">=</span> <span class="kw">function</span> (object) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="cf">return</span> <span class="kw">function</span> (config) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-10" title="10">            <span class="cf">return</span> <span class="at">jQuery</span>(object).<span class="at">steps</span>(config)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="op">};</span></a></code></pre></div>
+<p>We define our export function that wraps jQuery-steps by providing a <a href="https://leanpub.com/purescript/read#leanpub-auto-curried-functions">curried</a> interface. It’s worth noting that we’re using the FFI style introduced in <a href="https://github.com/purescript/purescript/wiki/0.7-Migration-Guide#no-more-inline-ffi-code">PureScript 0.7</a>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">foreign <span class="kw">import</span> steps :: forall eff. <span class="dt">JQuery</span> -&gt; <span class="dt">Config</span> -&gt; <span class="dt">Eff</span> (dom :: <span class="dt">DOM</span> | eff) <span class="dt">Unit</span></a></code></pre></div>
+<p>And, finally, we write a foreign import declaration and we’re done. It’s really as simple as that. Well, almost.</p>
+<h2 id="callbacks-and-dishonesty">Callbacks and Dishonesty</h2>
+<p>Binding to DOM elements is all well and good but very soon you’ll want to add dynamic behaviour such as client-side validation. This means delving into into the unprincipled world of JavaScript callbacks and exposing the plugin’s event handler API.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">type</span> <span class="dt">Config</span> <span class="fu">=</span> {<span class="ot"> headerTag   ::</span> <span class="dt">HeaderTag</span></a>
+<a class="sourceLine" id="cb7-2" title="2">              ,<span class="ot"> bodyTag     ::</span> <span class="dt">BodyTag</span></a>
+<a class="sourceLine" id="cb7-3" title="3">              ,<span class="ot"> cssClass    ::</span> <span class="dt">CssClass</span></a>
+<a class="sourceLine" id="cb7-4" title="4">              ,<span class="ot"> onFinished  ::</span> <span class="dt">Callback2</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Unit</span></a>
+<a class="sourceLine" id="cb7-5" title="5">              ,<span class="ot"> onFinishing ::</span> <span class="dt">Fn3</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Boolean</span></a>
+<a class="sourceLine" id="cb7-6" title="6">              }</a></code></pre></div>
+<p>We begin by extending <strong>Config</strong> to include two new fields: <strong>onFinished</strong> and <strong>onFinishing</strong>. The type constructor <strong>Callback2</strong> comes from <a href="https://github.com/fluffynukeit/purescript-foreign-callbacks">purescript-foreign-callbacks</a> and represents an effectful computation that takes two arguments, whilst the type constructor <strong>Fn3</strong> comes from <a href="https://github.com/purescript/purescript-functions">purescript-functions</a> and represents a pure function that takes three arguments.</p>
+<p>Something seems a bit odd here - why is <strong>onFinished</strong> effectful, whilst <strong>onFinishing</strong> is pure? Well, the truth is that they are both effectful, but since JavaScript offers no means of distinguishing between effectful and pure computations, we need to circumvent the type checker to ensure functions we pass to <strong>onFinishing</strong> have the correct runtime representation.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="ot">mkFinishing ::</span> <span class="kw">forall</span> a<span class="fu">.</span> (<span class="dt">JQueryEvent</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> a <span class="dt">Boolean</span>)</a>
+<a class="sourceLine" id="cb8-2" title="2">             <span class="ot">-&gt;</span> <span class="dt">Fn3</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Boolean</span></a>
+<a class="sourceLine" id="cb8-3" title="3">mkFinishing f <span class="fu">=</span> mkFn3 \x y z <span class="ot">-&gt;</span> runPure <span class="fu">&lt;&lt;&lt;</span> unsafeInterleaveEff <span class="fu">$</span> f x y z</a></code></pre></div>
+<p><strong>mkFinishing</strong> transforms our function into an appropriate runtime representation by uncurrying it and by unsafely pulling the inner value out of the <strong>Eff</strong> constructor. We uncurry our function because JavaScript functions aren’t curried by default and we pull the inner value out of <strong>Eff</strong> because jQuery-steps expects a callback that returns a boolean value.</p>
+<p>If at this point you’re feeling a little uncomfortable, that’s OK. Once a value is inside <strong>Eff</strong> you shouldn’t really be pulling it back out without a very good reason. But we’re dealing with JavaScript code here and managing the impedance mismatch, so consumers of our bindings don’t have to, is probably reason enough. In any case, the callback function wouldn’t be very useful if it was pure!</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="ot">mkFinished ::</span> <span class="kw">forall</span> a<span class="fu">.</span> (<span class="dt">JQueryEvent</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> a <span class="dt">Unit</span>)</a>
+<a class="sourceLine" id="cb9-2" title="2">              <span class="ot">-&gt;</span> <span class="dt">Callback2</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Unit</span></a>
+<a class="sourceLine" id="cb9-3" title="3">mkFinished f <span class="fu">=</span> callback2 f</a></code></pre></div>
+<p><strong>mkFinished</strong>, on the other hand, is much simpler. It uses <a href="https://github.com/fluffynukeit/purescript-foreign-callbacks/blob/5c6502fcb0b53e51b69c76e437cfa3e9e177ddf5/src/Data/Foreign/Callback.js#L15-L17">callback2</a> to take our effectful computation of two arguments and transforms it into an appropriate runtime representation for jQuery-steps.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">defaultConfig ::</span> <span class="dt">Config</span></a>
+<a class="sourceLine" id="cb10-2" title="2">defaultConfig <span class="fu">=</span> { headerTag<span class="fu">:</span> <span class="dt">HeaderTag</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">                , bodyTag<span class="fu">:</span> <span class="dt">BodyTag</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">                , cssClass<span class="fu">:</span> <span class="dt">CssClass</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">                , onFinished<span class="fu">:</span> mkFinished \_ _ <span class="ot">-&gt;</span> <span class="fu">return</span> unit</a>
+<a class="sourceLine" id="cb10-6" title="6">                , onFinishing<span class="fu">:</span> mkFinishing \_ _ _ <span class="ot">-&gt;</span> <span class="fu">return</span> true</a>
+<a class="sourceLine" id="cb10-7" title="7">                }</a></code></pre></div>
+<p>And, finally, here’s what the resulting <strong>defaultConfig</strong> looks like. Now we’re really done. That wasn’t so bad, was it?</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>PureScript lets us easily reuse existing JavaScript libraries with help from its FFI. Being able to reuse code can help us prototype more rapidly by allowing us to stand on the shoulders of giants. Combining this property with a strongly typed language can help us when that rapid prototype needs to make its way into a production setting.</p>
+    </div>
+  </section>
+</div>
+]]></description>
+    <pubDate>Fri, 06 Nov 2015 00:00:00 UT</pubDate>
+    <guid>https://filib.io/posts/2015-11-06-writing-purescript-bindings-for-a-jquery-plugin.html</guid>
+    <dc:creator>Philip Cunningham</dc:creator>
+</item>
+<item>
+    <title>Using Loggly On Elastic Beanstalk</title>
+    <link>https://filib.io/posts/2015-07-19-using-loggly-on-elastic-beanstalk.html</link>
+    <description><![CDATA[<div>
+  <h1>
+    Using Loggly On Elastic Beanstalk
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2015-07-19
+      </h2>
+      <p>
+        <a href="/tags/ops.html" class="post-category green">ops</a>
+      </p>
+    </header>
+
+    <div>
+      <p>This week I had to configure a Rails app running on Elastic Beanstalk to use Loggly. Since I don’t want anyone to suffer the Elastic Beanstalk documentation more than is necessary, I’ve written this short tutorial should you find yourself tasked with the same challenge. It assumes you already have a Rails app running on Elastic Beanstalk and a general understanding of Rails apps.</p>
+<h2 id="configure-app">Configure App</h2>
+<p>Add the <a href="https://github.com/crohr/syslogger">syslogger</a> gem to your Gemfile.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># Gemfile</span></a>
+<a class="sourceLine" id="cb1-2" title="2">gem <span class="st">&#39;syslogger&#39;</span>, <span class="st">&#39;~&gt; 1.6.0&#39;</span></a></code></pre></div>
+<p>In <code>config/environments/production.rb</code> configure your app to use <code>Syslogger</code> for logging. Replace <code>&quot;your-app-name&quot;</code> with, you guessed it, the name of your application. This allows you to easily see logs from your app in the Loggly web interface using <a href="https://www.loggly.com/docs/source-groups/">source groups</a>, which is especially useful if you’re using Loggly to aggregate logs from multiple apps.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ruby"><code class="sourceCode ruby"><a class="sourceLine" id="cb2-1" title="1"><span class="co"># config/environments/production.rb</span></a>
+<a class="sourceLine" id="cb2-2" title="2">config.logger = <span class="dt">Syslogger</span>.new(<span class="st">&quot;your-app-name&quot;</span>, <span class="dt">Syslog</span>::<span class="dt">LOG_PID</span>, <span class="dt">Syslog</span>::<span class="dt">LOG_LOCAL7</span>)</a></code></pre></div>
+<h2 id="create-loggly-account">Create Loggly Account</h2>
+<p>Go <a href="https://www.loggly.com/signup/">sign up</a> for a <a href="https://www.loggly.com/">Loggly</a> account and <a href="https://www.loggly.com/docs/customer-token-authentication-token/">create a customer token</a>.</p>
+<h2 id="configure-container-environment">Configure Container Environment</h2>
+<p>Go to the Amazon AWS Console and add your Loggly account name and customer token to your Elastic Beanstalk app’s environment using the <code>LOGGLY_ACCOUNT</code> and <code>LOGGLY_AUTH</code> property names.</p>
+<h2 id="customise-container">Customise Container</h2>
+<p>Add the following configuration to <code>loggly.config</code> in the <code>.ebextensions</code> directory in the root of your app.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode yaml"><code class="sourceCode yaml"><a class="sourceLine" id="cb3-1" title="1"><span class="co"># .ebextensions/loggly.config</span></a>
+<a class="sourceLine" id="cb3-2" title="2"><span class="fu">files:</span></a>
+<a class="sourceLine" id="cb3-3" title="3">  <span class="fu">&quot;/tmp/loggly_config.sh&quot;:</span></a>
+<a class="sourceLine" id="cb3-4" title="4">    <span class="fu">mode:</span><span class="at"> </span><span class="st">&quot;000755&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">    <span class="fu">owner:</span><span class="at"> root</span></a>
+<a class="sourceLine" id="cb3-6" title="6">    <span class="fu">group:</span><span class="at"> root</span></a>
+<a class="sourceLine" id="cb3-7" title="7"><span class="fu">    content:</span> <span class="st">|</span></a>
+<a class="sourceLine" id="cb3-8" title="8">      #!/bin/bash</a>
+<a class="sourceLine" id="cb3-9" title="9">      su --command=&quot;python /tmp/configure-syslog.py setup --auth $LOGGLY_AUTH --account $LOGGLY_ACCOUNT --yes&quot;</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"><span class="fu">container_commands:</span></a>
+<a class="sourceLine" id="cb3-12" title="12">  <span class="fu">01_loggly_dl:</span></a>
+<a class="sourceLine" id="cb3-13" title="13">    <span class="fu">command:</span></a>
+<a class="sourceLine" id="cb3-14" title="14">      wget -q -O /tmp/configure-syslog.py https://www.loggly.com/install/configure-syslog.py</a>
+<a class="sourceLine" id="cb3-15" title="15">  <span class="fu">02_loggly_config:</span></a>
+<a class="sourceLine" id="cb3-16" title="16">    <span class="fu">command:</span><span class="at"> /tmp/loggly_config.sh</span></a></code></pre></div>
+<p>This YAML file downloads Loggly’s own syslog configuration script and sets up your container to send your system logs to Loggly. You can audit this script at <a href="https://github.com/loggly/install-script/blob/master/configure-syslog.py">loggly/install-script</a>.</p>
+<h2 id="wrap-up">Wrap Up</h2>
+<p>Re-deploy your app to Elastic Beanstalk and watch as your logs begin appearing in Loggly.</p>
+    </div>
+  </section>
+</div>
+]]></description>
+    <pubDate>Sun, 19 Jul 2015 00:00:00 UT</pubDate>
+    <guid>https://filib.io/posts/2015-07-19-using-loggly-on-elastic-beanstalk.html</guid>
+    <dc:creator>Philip Cunningham</dc:creator>
+</item>
+
+    </channel>
+</rss>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Philip is a Ruby and Haskell developer currently working remotely from Melbourne.">
+    <title>
+      Philip Cunningham -
+      
+      Writing PureScript Bindings for a jQuery Plugin
+      
+    </title>
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/filib.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="column one-third">
+          <nav class="masthead">
+            <ul>
+              <li>
+                <a href="../">
+                  Home
+                </a>
+              </li>
+              </li>
+              <li>
+                <a href="../about.html">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="../rss.xml">
+                  RSS
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div>
+  <h1>
+    Writing PureScript Bindings for a jQuery Plugin
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2015-11-06
+      </h2>
+      <p>
+        <a href="../tags/javascript.html" class="post-category green">javascript</a> <a href="../tags/purescript.html" class="post-category green">purescript</a>
+      </p>
+    </header>
+
+    <div>
+      <p>You’ve started a new project at work with a tight deadline. You’re in charge of picking the stack and after assessing technologies best for the project you’ve decided to use <a href="http://www.purescript.org/">PureScript</a> on the front-end. One factor determining the success of the project is that it be delivered on time.</p>
+<p>PureScript is the technology I chose for a new project at work and one of the ways it’s helping my company deliver our project on time is by allowing us to leverage existing JavaScript libraries using its <a href="https://en.wikipedia.org/wiki/Foreign_function_interface">foreign function interface (FFI)</a>, whilst still allowing us to exploit strong typing. The experience of writing FFI bindings has been so positive that I wanted to share with you how you might write your own bindings for an existing <a href="https://github.com/jquery/jquery">jQuery</a> plugin.</p>
+<p>In this post, together we’ll be writing bindings for a subset of the functionality of <a href="https://github.com/rstaib/jquery-steps">jQuery-steps</a>: a lightweight wizard UI component written for jQuery. This won’t be a deep dive into PureScript’s FFI but will give you an insight into some of the practical considerations involved in using JavaScript code from PureScript. It assumes familiarity with JavaScript, PureScript and jQuery.</p>
+<h2 id="ffi">FFI</h2>
+<p><a href="https://leanpub.com/purescript/read#leanpub-auto-the-foreign-function-interface">PureScript’s FFI</a> allows communication from PureScript code to JavaScript code. It’s straight-forward and flexible, making it possible to write bindings for even the most involved JavaScript code. Provided, that is, that you understand the underlying runtime representation of what you’re dealing with.</p>
+<h2 id="configuration">Configuration</h2>
+<p>As is typical for jQuery plugins, jQuery-steps takes a configuration object to tell it which DOM elements it should bind to. We begin by defining the types we’ll need to safely represent the fields of this configuration object in PureScript.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">module</span> <span class="dt">JQuery.Steps</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-2" title="2"></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="kw">import</span> <span class="dt">Control.Monad.Eff</span></a>
+<a class="sourceLine" id="cb1-4" title="4"><span class="kw">import</span> <span class="dt">Control.Monad.Eff.JQuery</span></a>
+<a class="sourceLine" id="cb1-5" title="5"><span class="kw">import</span> <span class="dt">Control.Monad.Eff.Unsafe</span></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">import</span> <span class="dt">DOM</span></a>
+<a class="sourceLine" id="cb1-7" title="7"><span class="kw">import</span> <span class="dt">Data.Foreign.Callback</span></a>
+<a class="sourceLine" id="cb1-8" title="8"><span class="kw">import</span> <span class="dt">Data.Function</span></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">import</span> <span class="dt">Prelude</span></a>
+<a class="sourceLine" id="cb1-10" title="10"></a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">newtype</span> <span class="dt">HeaderTag</span> <span class="fu">=</span> <span class="dt">HeaderTag</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">newtype</span> <span class="dt">BodyTag</span> <span class="fu">=</span> <span class="dt">BodyTag</span> <span class="dt">String</span></a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">newtype</span> <span class="dt">CssClass</span> <span class="fu">=</span> <span class="dt">CssClass</span> <span class="dt">String</span></a></code></pre></div>
+<p>We use <a href="https://leanpub.com/purescript/read#leanpub-auto-newtypes">newtype</a> wrappers to represent the values of the fields in our configuration object. We do this because newtypes have the same runtime representation as the underlying type, whilst being distinct from the perspective of the type checker. This makes newtypes an easy win for providing an extra layer of type safety when defining FFI bindings.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="kw">type</span> <span class="dt">Config</span> <span class="fu">=</span> {<span class="ot"> headerTag ::</span> <span class="dt">HeaderTag</span></a>
+<a class="sourceLine" id="cb2-2" title="2">              ,<span class="ot"> bodyTag   ::</span> <span class="dt">BodyTag</span></a>
+<a class="sourceLine" id="cb2-3" title="3">              ,<span class="ot"> cssClass  ::</span> <span class="dt">CssClass</span></a>
+<a class="sourceLine" id="cb2-4" title="4">              }</a></code></pre></div>
+<p>We use a <a href="https://leanpub.com/purescript/read#leanpub-auto-defining-our-types">type synonym</a> to represent our configuration rather than an <a href="https://leanpub.com/purescript/read#leanpub-auto-algebraic-data-types">algebraic data type</a> (ADT). Much like a newtype, the type synonym’s runtime representation will have a direct correspondence with what jQuery-steps expects, whereas an ADT’s constructors would present an extra level of indirection that we’d have to handle in our JavaScript wrapper.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="ot">defaultConfig ::</span> <span class="dt">Config</span></a>
+<a class="sourceLine" id="cb3-2" title="2">defaultConfig <span class="fu">=</span> { headerTag<span class="fu">:</span> <span class="dt">HeaderTag</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb3-3" title="3">                , bodyTag<span class="fu">:</span> <span class="dt">BodyTag</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb3-4" title="4">                , cssClass<span class="fu">:</span> <span class="dt">CssClass</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb3-5" title="5">                }</a></code></pre></div>
+<p>We define a default configuration object to let consumers of our bindings use <a href="https://leanpub.com/purescript/read#leanpub-auto-putting-row-polymorphism-to-work">record update syntax</a> to override the defaults we’ve set.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb4-1" title="1"><span class="kw">var</span> defaultConfig <span class="op">=</span> <span class="op">{</span></a>
+<a class="sourceLine" id="cb4-2" title="2">      <span class="dt">headerTag</span><span class="op">:</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb4-3" title="3">    <span class="op">,</span> <span class="dt">bodyTag</span><span class="op">:</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb4-4" title="4">    <span class="op">,</span> <span class="dt">cssClass</span><span class="op">:</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb4-5" title="5"><span class="op">}</span></a></code></pre></div>
+<p>Here’s what <strong>defaultConfig</strong> will look like at runtime. You can see that despite adding an extra layer of type safety when working with our configuration object in PureScript, we don’t pay any extra cost for the abstraction at runtime. Practically speaking, this means that we can pass our configuration object directly to jQuery-steps.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode javascript"><code class="sourceCode javascript"><a class="sourceLine" id="cb5-1" title="1"><span class="co">/*global exports, jQuery*/</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"><span class="st">&quot;use strict&quot;</span><span class="op">;</span></a>
+<a class="sourceLine" id="cb5-4" title="4"></a>
+<a class="sourceLine" id="cb5-5" title="5"><span class="co">// module JQuery.Steps</span></a>
+<a class="sourceLine" id="cb5-6" title="6"></a>
+<a class="sourceLine" id="cb5-7" title="7"><span class="va">exports</span>.<span class="at">steps</span> <span class="op">=</span> <span class="kw">function</span> (object) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-8" title="8">    <span class="cf">return</span> <span class="kw">function</span> (config) <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-9" title="9">        <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></a>
+<a class="sourceLine" id="cb5-10" title="10">            <span class="cf">return</span> <span class="at">jQuery</span>(object).<span class="at">steps</span>(config)<span class="op">;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">        <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-12" title="12">    <span class="op">};</span></a>
+<a class="sourceLine" id="cb5-13" title="13"><span class="op">};</span></a></code></pre></div>
+<p>We define our export function that wraps jQuery-steps by providing a <a href="https://leanpub.com/purescript/read#leanpub-auto-curried-functions">curried</a> interface. It’s worth noting that we’re using the FFI style introduced in <a href="https://github.com/purescript/purescript/wiki/0.7-Migration-Guide#no-more-inline-ffi-code">PureScript 0.7</a>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">foreign <span class="kw">import</span> steps :: forall eff. <span class="dt">JQuery</span> -&gt; <span class="dt">Config</span> -&gt; <span class="dt">Eff</span> (dom :: <span class="dt">DOM</span> | eff) <span class="dt">Unit</span></a></code></pre></div>
+<p>And, finally, we write a foreign import declaration and we’re done. It’s really as simple as that. Well, almost.</p>
+<h2 id="callbacks-and-dishonesty">Callbacks and Dishonesty</h2>
+<p>Binding to DOM elements is all well and good but very soon you’ll want to add dynamic behaviour such as client-side validation. This means delving into into the unprincipled world of JavaScript callbacks and exposing the plugin’s event handler API.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1"><span class="kw">type</span> <span class="dt">Config</span> <span class="fu">=</span> {<span class="ot"> headerTag   ::</span> <span class="dt">HeaderTag</span></a>
+<a class="sourceLine" id="cb7-2" title="2">              ,<span class="ot"> bodyTag     ::</span> <span class="dt">BodyTag</span></a>
+<a class="sourceLine" id="cb7-3" title="3">              ,<span class="ot"> cssClass    ::</span> <span class="dt">CssClass</span></a>
+<a class="sourceLine" id="cb7-4" title="4">              ,<span class="ot"> onFinished  ::</span> <span class="dt">Callback2</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Unit</span></a>
+<a class="sourceLine" id="cb7-5" title="5">              ,<span class="ot"> onFinishing ::</span> <span class="dt">Fn3</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Boolean</span></a>
+<a class="sourceLine" id="cb7-6" title="6">              }</a></code></pre></div>
+<p>We begin by extending <strong>Config</strong> to include two new fields: <strong>onFinished</strong> and <strong>onFinishing</strong>. The type constructor <strong>Callback2</strong> comes from <a href="https://github.com/fluffynukeit/purescript-foreign-callbacks">purescript-foreign-callbacks</a> and represents an effectful computation that takes two arguments, whilst the type constructor <strong>Fn3</strong> comes from <a href="https://github.com/purescript/purescript-functions">purescript-functions</a> and represents a pure function that takes three arguments.</p>
+<p>Something seems a bit odd here - why is <strong>onFinished</strong> effectful, whilst <strong>onFinishing</strong> is pure? Well, the truth is that they are both effectful, but since JavaScript offers no means of distinguishing between effectful and pure computations, we need to circumvent the type checker to ensure functions we pass to <strong>onFinishing</strong> have the correct runtime representation.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb8-1" title="1"><span class="ot">mkFinishing ::</span> <span class="kw">forall</span> a<span class="fu">.</span> (<span class="dt">JQueryEvent</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> a <span class="dt">Boolean</span>)</a>
+<a class="sourceLine" id="cb8-2" title="2">             <span class="ot">-&gt;</span> <span class="dt">Fn3</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Int</span> <span class="dt">Boolean</span></a>
+<a class="sourceLine" id="cb8-3" title="3">mkFinishing f <span class="fu">=</span> mkFn3 \x y z <span class="ot">-&gt;</span> runPure <span class="fu">&lt;&lt;&lt;</span> unsafeInterleaveEff <span class="fu">$</span> f x y z</a></code></pre></div>
+<p><strong>mkFinishing</strong> transforms our function into an appropriate runtime representation by uncurrying it and by unsafely pulling the inner value out of the <strong>Eff</strong> constructor. We uncurry our function because JavaScript functions aren’t curried by default and we pull the inner value out of <strong>Eff</strong> because jQuery-steps expects a callback that returns a boolean value.</p>
+<p>If at this point you’re feeling a little uncomfortable, that’s OK. Once a value is inside <strong>Eff</strong> you shouldn’t really be pulling it back out without a very good reason. But we’re dealing with JavaScript code here and managing the impedance mismatch, so consumers of our bindings don’t have to, is probably reason enough. In any case, the callback function wouldn’t be very useful if it was pure!</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb9-1" title="1"><span class="ot">mkFinished ::</span> <span class="kw">forall</span> a<span class="fu">.</span> (<span class="dt">JQueryEvent</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Eff</span> a <span class="dt">Unit</span>)</a>
+<a class="sourceLine" id="cb9-2" title="2">              <span class="ot">-&gt;</span> <span class="dt">Callback2</span> <span class="dt">JQueryEvent</span> <span class="dt">Int</span> <span class="dt">Unit</span></a>
+<a class="sourceLine" id="cb9-3" title="3">mkFinished f <span class="fu">=</span> callback2 f</a></code></pre></div>
+<p><strong>mkFinished</strong>, on the other hand, is much simpler. It uses <a href="https://github.com/fluffynukeit/purescript-foreign-callbacks/blob/5c6502fcb0b53e51b69c76e437cfa3e9e177ddf5/src/Data/Foreign/Callback.js#L15-L17">callback2</a> to take our effectful computation of two arguments and transforms it into an appropriate runtime representation for jQuery-steps.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb10-1" title="1"><span class="ot">defaultConfig ::</span> <span class="dt">Config</span></a>
+<a class="sourceLine" id="cb10-2" title="2">defaultConfig <span class="fu">=</span> { headerTag<span class="fu">:</span> <span class="dt">HeaderTag</span> <span class="st">&quot;h1&quot;</span></a>
+<a class="sourceLine" id="cb10-3" title="3">                , bodyTag<span class="fu">:</span> <span class="dt">BodyTag</span> <span class="st">&quot;div&quot;</span></a>
+<a class="sourceLine" id="cb10-4" title="4">                , cssClass<span class="fu">:</span> <span class="dt">CssClass</span> <span class="st">&quot;wizard&quot;</span></a>
+<a class="sourceLine" id="cb10-5" title="5">                , onFinished<span class="fu">:</span> mkFinished \_ _ <span class="ot">-&gt;</span> <span class="fu">return</span> unit</a>
+<a class="sourceLine" id="cb10-6" title="6">                , onFinishing<span class="fu">:</span> mkFinishing \_ _ _ <span class="ot">-&gt;</span> <span class="fu">return</span> true</a>
+<a class="sourceLine" id="cb10-7" title="7">                }</a></code></pre></div>
+<p>And, finally, here’s what the resulting <strong>defaultConfig</strong> looks like. Now we’re really done. That wasn’t so bad, was it?</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>PureScript lets us easily reuse existing JavaScript libraries with help from its FFI. Being able to reuse code can help us prototype more rapidly by allowing us to stand on the shoulders of giants. Combining this property with a strongly typed language can help us when that rapid prototype needs to make its way into a production setting.</p>
+    </div>
+  </section>
+</div>
+
+      </div>
+    </div>
+  </body>
+</html>

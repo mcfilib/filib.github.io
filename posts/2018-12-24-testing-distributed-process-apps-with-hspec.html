@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Philip is a Ruby and Haskell developer currently working remotely from Melbourne.">
+    <title>
+      Philip Cunningham -
+      
+      Testing distributed-process Apps Using Hspec
+      
+    </title>
+    <link rel="stylesheet" href="../css/normalize.css">
+    <link rel="stylesheet" href="../css/filib.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="column one-third">
+          <nav class="masthead">
+            <ul>
+              <li>
+                <a href="../">
+                  Home
+                </a>
+              </li>
+              </li>
+              <li>
+                <a href="../about.html">
+                  About
+                </a>
+              </li>
+              <li>
+                <a href="../rss.xml">
+                  RSS
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      <hr />
+      <div class="row">
+        <div>
+  <h1>
+    Testing distributed-process Apps Using Hspec
+  </h1>
+  <section>
+    <header>
+      <h2>
+        2018-12-24
+      </h2>
+      <p>
+        <a href="../tags/distributed-process.html" class="post-category green">distributed-process</a> <a href="../tags/haskell.html" class="post-category green">haskell</a> <a href="../tags/hspec.html" class="post-category green">hspec</a> <a href="../tags/testing.html" class="post-category green">testing</a>
+      </p>
+    </header>
+
+    <div>
+      <p><a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> is a Haskell library that brings Erlang-style concurrency to Haskell. Whilst developing an application at work that uses it, I found that there wasn’t much material online describing how to test <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> applications. I used some techniques from object-oriented programming that allowed me to test the behaviour of my application whilst I was learning how it was supposed to fit together. This post documents some techniques I found useful.</p>
+<h2 id="application">Application</h2>
+<p>Our example revolves around a fairly simple <a href="https://en.wikipedia.org/wiki/Client%E2%80%93server_model">client-server</a> application. The client process can send data to the server and output responses to the console, whilst the server performs calculations and sends the results back to clients.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb1-1" title="1"><span class="ot">{-# LANGUAGE DeriveGeneric #-}</span></a>
+<a class="sourceLine" id="cb1-2" title="2"><span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span></a>
+<a class="sourceLine" id="cb1-3" title="3"><span class="ot">{-# LANGUAGE TupleSections #-}</span></a>
+<a class="sourceLine" id="cb1-4" title="4"></a>
+<a class="sourceLine" id="cb1-5" title="5"></a>
+<a class="sourceLine" id="cb1-6" title="6"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></a>
+<a class="sourceLine" id="cb1-7" title="7"></a>
+<a class="sourceLine" id="cb1-8" title="8"></a>
+<a class="sourceLine" id="cb1-9" title="9"><span class="kw">import</span> <span class="dt">Control.Distributed.Process</span> (<span class="dt">Process</span>, <span class="dt">ProcessId</span>, expect, getSelfPid, register, say, send, whereis)</a>
+<a class="sourceLine" id="cb1-10" title="10"><span class="kw">import</span> <span class="dt">Control.Distributed.Process.Node</span> (<span class="dt">LocalNode</span>, initRemoteTable, forkProcess, newLocalNode, runProcess)</a>
+<a class="sourceLine" id="cb1-11" title="11"><span class="kw">import</span> <span class="dt">Data.Binary</span> (<span class="dt">Binary</span>)</a>
+<a class="sourceLine" id="cb1-12" title="12"><span class="kw">import</span> <span class="dt">Network.Transport</span> (<span class="dt">Transport</span>(..))</a>
+<a class="sourceLine" id="cb1-13" title="13"><span class="kw">import</span> <span class="dt">Network.Transport.TCP</span> (createTransport, defaultTCPParameters)</a>
+<a class="sourceLine" id="cb1-14" title="14"><span class="kw">import</span> <span class="dt">Prelude</span> (<span class="dt">String</span>)</a>
+<a class="sourceLine" id="cb1-15" title="15"><span class="kw">import</span> <span class="dt">Protolude</span></a>
+<a class="sourceLine" id="cb1-16" title="16"><span class="kw">import</span> <span class="dt">Test.Hspec</span></a>
+<a class="sourceLine" id="cb1-17" title="17"></a>
+<a class="sourceLine" id="cb1-18" title="18"></a>
+<a class="sourceLine" id="cb1-19" title="19"><span class="co">-- APP</span></a>
+<a class="sourceLine" id="cb1-20" title="20"></a>
+<a class="sourceLine" id="cb1-21" title="21"></a>
+<a class="sourceLine" id="cb1-22" title="22"><span class="ot">app ::</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-23" title="23">app node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-24" title="24">  _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> clientProcess</a>
+<a class="sourceLine" id="cb1-25" title="25">  _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;server&quot;</span> serverProcess</a>
+<a class="sourceLine" id="cb1-26" title="26">  <span class="fu">pure</span> ()</a>
+<a class="sourceLine" id="cb1-27" title="27"></a>
+<a class="sourceLine" id="cb1-28" title="28"></a>
+<a class="sourceLine" id="cb1-29" title="29"><span class="co">-- PROCESSES</span></a>
+<a class="sourceLine" id="cb1-30" title="30"></a>
+<a class="sourceLine" id="cb1-31" title="31"></a>
+<a class="sourceLine" id="cb1-32" title="32"><span class="kw">data</span> <span class="dt">ClientMsg</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-33" title="33">      <span class="dt">Ask</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-34" title="34">    <span class="fu">|</span> <span class="dt">Result</span> <span class="dt">Int</span></a>
+<a class="sourceLine" id="cb1-35" title="35">    <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Generic</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-36" title="36"></a>
+<a class="sourceLine" id="cb1-37" title="37"><span class="kw">instance</span> <span class="dt">Binary</span> <span class="dt">ClientMsg</span></a>
+<a class="sourceLine" id="cb1-38" title="38"></a>
+<a class="sourceLine" id="cb1-39" title="39"></a>
+<a class="sourceLine" id="cb1-40" title="40"><span class="ot">clientProcess ::</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-41" title="41">clientProcess <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-42" title="42">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb1-43" title="43"></a>
+<a class="sourceLine" id="cb1-44" title="44">  <span class="kw">case</span> msg <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-45" title="45">    <span class="dt">Ask</span> ints <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-46" title="46">      self <span class="ot">&lt;-</span> getSelfPid</a>
+<a class="sourceLine" id="cb1-47" title="47">      namedSend <span class="st">&quot;server&quot;</span> <span class="fu">$</span> <span class="dt">Calc</span> self ints</a>
+<a class="sourceLine" id="cb1-48" title="48"></a>
+<a class="sourceLine" id="cb1-49" title="49">    <span class="dt">Result</span> n <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb1-50" title="50">      say <span class="fu">$</span> <span class="st">&quot;received: &quot;</span> <span class="fu">&lt;&gt;</span> <span class="fu">show</span> n</a>
+<a class="sourceLine" id="cb1-51" title="51"></a>
+<a class="sourceLine" id="cb1-52" title="52"></a>
+<a class="sourceLine" id="cb1-53" title="53"><span class="kw">data</span> <span class="dt">ServerMsg</span> <span class="fu">=</span></a>
+<a class="sourceLine" id="cb1-54" title="54">  <span class="dt">Calc</span> <span class="dt">ProcessId</span> [<span class="dt">Int</span>]</a>
+<a class="sourceLine" id="cb1-55" title="55">  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Generic</span>, <span class="dt">Show</span>)</a>
+<a class="sourceLine" id="cb1-56" title="56"></a>
+<a class="sourceLine" id="cb1-57" title="57"></a>
+<a class="sourceLine" id="cb1-58" title="58"><span class="kw">instance</span> <span class="dt">Binary</span> <span class="dt">ServerMsg</span></a>
+<a class="sourceLine" id="cb1-59" title="59"></a>
+<a class="sourceLine" id="cb1-60" title="60"></a>
+<a class="sourceLine" id="cb1-61" title="61"><span class="ot">serverProcess ::</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb1-62" title="62">serverProcess <span class="fu">=</span> forever <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-63" title="63">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb1-64" title="64"></a>
+<a class="sourceLine" id="cb1-65" title="65">  <span class="kw">case</span> msg <span class="kw">of</span></a>
+<a class="sourceLine" id="cb1-66" title="66">    <span class="dt">Calc</span> sender ints <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb1-67" title="67">      send sender <span class="fu">$</span> <span class="dt">Result</span> (<span class="fu">sum</span> ints)</a></code></pre></div>
+<p>The code above uses some helper functions that aren’t present in <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a>; these are included in the code below to let you follow along at home.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb2-1" title="1"><span class="co">-- PROCESS HELPERS</span></a>
+<a class="sourceLine" id="cb2-2" title="2"></a>
+<a class="sourceLine" id="cb2-3" title="3"></a>
+<a class="sourceLine" id="cb2-4" title="4"><span class="co">-- | Fork process and register it</span></a>
+<a class="sourceLine" id="cb2-5" title="5"><span class="ot">newProcess ::</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> () <span class="ot">-&gt;</span> <span class="dt">Process</span> <span class="dt">ProcessId</span></a>
+<a class="sourceLine" id="cb2-6" title="6">newProcess node name process <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-7" title="7">  pid <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> forkProcess node process</a>
+<a class="sourceLine" id="cb2-8" title="8">  _ <span class="ot">&lt;-</span> register name pid</a>
+<a class="sourceLine" id="cb2-9" title="9">  <span class="fu">pure</span> pid</a>
+<a class="sourceLine" id="cb2-10" title="10"></a>
+<a class="sourceLine" id="cb2-11" title="11"></a>
+<a class="sourceLine" id="cb2-12" title="12"><span class="co">-- | Create a new transport</span></a>
+<a class="sourceLine" id="cb2-13" title="13"><span class="ot">newTransport ::</span> <span class="dt">IO</span> (<span class="dt">Either</span> <span class="dt">IOException</span> <span class="dt">Transport</span>)</a>
+<a class="sourceLine" id="cb2-14" title="14">newTransport <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-15" title="15">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb2-16" title="16">    host <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-17" title="17">      <span class="st">&quot;localhost&quot;</span></a>
+<a class="sourceLine" id="cb2-18" title="18">    port <span class="fu">=</span></a>
+<a class="sourceLine" id="cb2-19" title="19">      <span class="st">&quot;3000&quot;</span></a>
+<a class="sourceLine" id="cb2-20" title="20">  <span class="kw">in</span></a>
+<a class="sourceLine" id="cb2-21" title="21">    createTransport host port (host,) defaultTCPParameters</a>
+<a class="sourceLine" id="cb2-22" title="22"></a>
+<a class="sourceLine" id="cb2-23" title="23"></a>
+<a class="sourceLine" id="cb2-24" title="24"><span class="co">-- | Spins up an application</span></a>
+<a class="sourceLine" id="cb2-25" title="25"><span class="ot">run ::</span> (<span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> (<span class="dt">LocalNode</span>, <span class="dt">Transport</span>)</a>
+<a class="sourceLine" id="cb2-26" title="26">run app <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-27" title="27">  eitherTrans <span class="ot">&lt;-</span> newTransport</a>
+<a class="sourceLine" id="cb2-28" title="28"></a>
+<a class="sourceLine" id="cb2-29" title="29">  <span class="kw">case</span> eitherTrans <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-30" title="30">    <span class="dt">Left</span> err <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-31" title="31">      panic <span class="fu">$</span> <span class="fu">show</span> err</a>
+<a class="sourceLine" id="cb2-32" title="32"></a>
+<a class="sourceLine" id="cb2-33" title="33">    <span class="dt">Right</span> transport <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-34" title="34">      node <span class="ot">&lt;-</span> newLocalNode transport initRemoteTable</a>
+<a class="sourceLine" id="cb2-35" title="35">      _    <span class="ot">&lt;-</span> runProcess node (app node)</a>
+<a class="sourceLine" id="cb2-36" title="36"></a>
+<a class="sourceLine" id="cb2-37" title="37">      <span class="fu">pure</span> (node, transport)</a>
+<a class="sourceLine" id="cb2-38" title="38"></a>
+<a class="sourceLine" id="cb2-39" title="39"></a>
+<a class="sourceLine" id="cb2-40" title="40"><span class="co">-- | Sends to a named process</span></a>
+<a class="sourceLine" id="cb2-41" title="41"><span class="ot">namedSend ::</span> (<span class="dt">Binary</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">String</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb2-42" title="42">namedSend name msg <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb2-43" title="43">  mbPid <span class="ot">&lt;-</span> whereis name</a>
+<a class="sourceLine" id="cb2-44" title="44"></a>
+<a class="sourceLine" id="cb2-45" title="45">  <span class="kw">case</span> mbPid <span class="kw">of</span></a>
+<a class="sourceLine" id="cb2-46" title="46">    <span class="dt">Nothing</span> <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-47" title="47">      say <span class="st">&quot;process not registered&quot;</span></a>
+<a class="sourceLine" id="cb2-48" title="48"></a>
+<a class="sourceLine" id="cb2-49" title="49">    <span class="dt">Just</span> pid <span class="ot">-&gt;</span></a>
+<a class="sourceLine" id="cb2-50" title="50">       send pid msg</a></code></pre></div>
+<h2 id="testing">Testing</h2>
+<p>We’ll start off by writing a custom <a href="https://hspec.github.io/writing-specs.html">HSpec</a> hook to make a bridge between our application and our tests. Our hook will spin up an application and thread around a shared <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a> and a <a href="http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode"><code>LocalNode</code></a>.</p>
+<p>The <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a> serves two purposes; it will be used to communicate state and act as locking mechanism (<a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#v:takeMVar"><code>takeMVar</code></a> blocks until it’s full). Whilst the <a href="http://hackage.haskell.org/package/distributed-process-0.7.4/docs/Control-Distributed-Process-Node.html#t:LocalNode"><code>LocalNode</code></a> will allow us to spin up adhoc processes when we need them.</p>
+<p>The functions <code>aroundApp</code> and <code>withApp</code> are the first step in bridging these two worlds.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb3-1" title="1"><span class="co">-- SPEC HELPERS</span></a>
+<a class="sourceLine" id="cb3-2" title="2"></a>
+<a class="sourceLine" id="cb3-3" title="3"></a>
+<a class="sourceLine" id="cb3-4" title="4"><span class="co">-- | Spins up and tears down app and passing along an mvar</span></a>
+<a class="sourceLine" id="cb3-5" title="5"><span class="ot">aroundApp ::</span> (<span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ())</a>
+<a class="sourceLine" id="cb3-6" title="6">          <span class="ot">-&gt;</span> <span class="dt">SpecWith</span> (<span class="dt">MVar</span> a, <span class="dt">LocalNode</span>)</a>
+<a class="sourceLine" id="cb3-7" title="7">          <span class="ot">-&gt;</span> <span class="dt">Spec</span></a>
+<a class="sourceLine" id="cb3-8" title="8">aroundApp app <span class="fu">=</span></a>
+<a class="sourceLine" id="cb3-9" title="9">  around <span class="fu">$</span> withApp app</a>
+<a class="sourceLine" id="cb3-10" title="10"></a>
+<a class="sourceLine" id="cb3-11" title="11"></a>
+<a class="sourceLine" id="cb3-12" title="12"><span class="co">-- | Spins up application, closes it cleanly and passes along an mvar</span></a>
+<a class="sourceLine" id="cb3-13" title="13"><span class="ot">withApp ::</span> (<span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">LocalNode</span> <span class="ot">-&gt;</span> <span class="dt">Process</span> ())</a>
+<a class="sourceLine" id="cb3-14" title="14">        <span class="ot">-&gt;</span> (((<span class="dt">MVar</span> a, <span class="dt">LocalNode</span>) <span class="ot">-&gt;</span> <span class="dt">IO</span> ()) <span class="ot">-&gt;</span> <span class="dt">IO</span> ())</a>
+<a class="sourceLine" id="cb3-15" title="15">withApp app action <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb3-16" title="16">  mvar              <span class="ot">&lt;-</span> newEmptyMVar</a>
+<a class="sourceLine" id="cb3-17" title="17">  (node, transport) <span class="ot">&lt;-</span> run <span class="fu">$</span> app mvar</a>
+<a class="sourceLine" id="cb3-18" title="18">  finally (action (mvar, node)) (closeTransport transport)</a></code></pre></div>
+<p>The second step in bridging these worlds is defining a function that’ll listen for messages that are sent to a process and put them in our <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a>.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb4-1" title="1"><span class="co">-- | Listens for messages and writes msg to an mvar</span></a>
+<a class="sourceLine" id="cb4-2" title="2"><span class="ot">writer ::</span> (<span class="dt">Binary</span> a, <span class="dt">Show</span> a, <span class="dt">Typeable</span> a) <span class="ot">=&gt;</span> <span class="dt">MVar</span> a <span class="ot">-&gt;</span> <span class="dt">Process</span> ()</a>
+<a class="sourceLine" id="cb4-3" title="3">writer mvar <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb4-4" title="4">  msg <span class="ot">&lt;-</span> expect</a>
+<a class="sourceLine" id="cb4-5" title="5">  liftIO <span class="fu">$</span> putMVar mvar msg</a></code></pre></div>
+<p>Using these functions, we’ll write our first test. It’s important that we’re confident our application spins up all of the relevant processes it needs to function correctly. We’ll do this by starting our application, checking whether the process is registered and putting the result in our <a href="http://hackage.haskell.org/package/base-4.12.0.0/docs/Control-Concurrent-MVar.html#t:MVar"><code>MVar</code></a>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb5-1" title="1"><span class="co">-- SPECS</span></a>
+<a class="sourceLine" id="cb5-2" title="2"></a>
+<a class="sourceLine" id="cb5-3" title="3"></a>
+<a class="sourceLine" id="cb5-4" title="4"><span class="ot">main ::</span> <span class="dt">IO</span> ()</a>
+<a class="sourceLine" id="cb5-5" title="5">main <span class="fu">=</span> hspec <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-6" title="6">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb5-7" title="7">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-8" title="8">      _ <span class="ot">&lt;-</span> app node</a>
+<a class="sourceLine" id="cb5-9" title="9">      x <span class="ot">&lt;-</span> whereis <span class="st">&quot;client&quot;</span></a>
+<a class="sourceLine" id="cb5-10" title="10">      y <span class="ot">&lt;-</span> whereis <span class="st">&quot;server&quot;</span></a>
+<a class="sourceLine" id="cb5-11" title="11">      liftIO <span class="fu">$</span> putMVar mvar [x, y]</a>
+<a class="sourceLine" id="cb5-12" title="12"></a>
+<a class="sourceLine" id="cb5-13" title="13">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb5-14" title="14">    describe <span class="st">&quot;app&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-15" title="15">      it <span class="st">&quot;should spin up every process&quot;</span> <span class="fu">$</span> \(mvar, _) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb5-16" title="16">        mbPids <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb5-17" title="17">        <span class="fu">any</span> isNothing mbPids <span class="ot">`shouldBe`</span> <span class="dt">False</span></a></code></pre></div>
+<p>From here we’ll want to test that our processes communicate — i.e. send and receive appropriate messages — with one another as we expect. We do this by starting a client process and registering a server <a href="https://martinfowler.com/bliki/TestDouble.html">test double</a> that’ll listen for messages sent to it using the <code>writer</code> function.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb6-1" title="1">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb6-2" title="2">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-3" title="3">      _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> clientProcess</a>
+<a class="sourceLine" id="cb6-4" title="4">      _ <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;server&quot;</span> <span class="fu">$</span> writer mvar</a>
+<a class="sourceLine" id="cb6-5" title="5">      <span class="fu">pure</span> ()</a>
+<a class="sourceLine" id="cb6-6" title="6"></a>
+<a class="sourceLine" id="cb6-7" title="7">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-8" title="8">    describe <span class="st">&quot;Ask ints&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-9" title="9">      it <span class="st">&quot;should call the server process&quot;</span> <span class="fu">$</span> \(mvar, node) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb6-10" title="10">        _ <span class="ot">&lt;-</span> forkProcess node <span class="fu">$</span></a>
+<a class="sourceLine" id="cb6-11" title="11">          namedSend <span class="st">&quot;client&quot;</span> (<span class="dt">Ask</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>])</a>
+<a class="sourceLine" id="cb6-12" title="12"></a>
+<a class="sourceLine" id="cb6-13" title="13">        <span class="dt">Calc</span> _ ints <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb6-14" title="14">        ints <span class="ot">`shouldBe`</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</a></code></pre></div>
+<p>Finally we’ll want to test our server process calculates results correctly and sends them back to clients. We do this by starting our server process and sending a message to it from a <a href="https://martinfowler.com/bliki/TestDouble.html">test double</a> client process.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><a class="sourceLine" id="cb7-1" title="1">  <span class="kw">let</span></a>
+<a class="sourceLine" id="cb7-2" title="2">    double mvar node <span class="fu">=</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-3" title="3">      void <span class="fu">$</span> newProcess node <span class="st">&quot;server&quot;</span> serverProcess</a>
+<a class="sourceLine" id="cb7-4" title="4"></a>
+<a class="sourceLine" id="cb7-5" title="5">  aroundApp double <span class="fu">$</span></a>
+<a class="sourceLine" id="cb7-6" title="6">    describe <span class="st">&quot;Result i&quot;</span> <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-7" title="7">      it <span class="st">&quot;should call the client process with the result&quot;</span> <span class="fu">$</span> \(mvar, node) <span class="ot">-&gt;</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-8" title="8">        _ <span class="ot">&lt;-</span> forkProcess node <span class="fu">$</span> <span class="kw">do</span></a>
+<a class="sourceLine" id="cb7-9" title="9">          pid <span class="ot">&lt;-</span> newProcess node <span class="st">&quot;client&quot;</span> <span class="fu">$</span> writer mvar</a>
+<a class="sourceLine" id="cb7-10" title="10">          namedSend <span class="st">&quot;server&quot;</span> <span class="fu">$</span> <span class="dt">Calc</span> pid [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>]</a>
+<a class="sourceLine" id="cb7-11" title="11"></a>
+<a class="sourceLine" id="cb7-12" title="12">        <span class="dt">Result</span> i <span class="ot">&lt;-</span> takeMVar mvar</a>
+<a class="sourceLine" id="cb7-13" title="13">        i <span class="ot">`shouldBe`</span> <span class="dv">10</span></a></code></pre></div>
+<h2 id="conclusion">Conclusion</h2>
+<p>The approach described in this post reflects some of my background in object-oriented programming. After all, spinning up processes and testing messages passed between them feels very similar to instantiating objects and doing the same thing.</p>
+<p>There are obviously some shortcomings to the techniques described — the big one being that the type checker doesn’t complain when you send an unknown message to a process. That said, the approach <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> makes you take is very consistent and makes it pleasant to write asynchronous applications.</p>
+<p>Hopefully what I’ve written here offers some insight into how you might begin testing your <a href="https://github.com/haskell-distributed/distributed-process"><code>distributed-process</code></a> applications.</p>
+    </div>
+  </section>
+</div>
+
+      </div>
+    </div>
+  </body>
+</html>
