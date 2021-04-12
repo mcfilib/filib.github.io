@@ -37,7 +37,7 @@ jobs:
             npm run-script build
             cd ..
 
-            hackmyresume build resume.json TO resume.html resume.pdf --theme ./jsonresume-theme-eloquent
+            # hackmyresume build resume.json TO resume.html resume.pdf --theme ./jsonresume-theme-eloquent
       - restore_cache:
           keys:
             - stack-{{ .Branch }}-{{ checksum "stack.yaml" }}
